@@ -1,30 +1,58 @@
 # Serviq
 
-**Serviq** is a local AI assistant designed for day to day tasks. It leverages the power of large language models running on your local machine via [LM Studio](https://lmstudio.ai/) and combines it with a robust backend and a sleek desktop interface.
+**Serviq** is a local-first AI assistant for day-to-day tasks. It runs large language models on your own machine through [LM Studio](https://lmstudio.ai/) and pairs them with a FastAPI backend plus a cross-platform desktop app.
 
-The project is built with a focus on privacy, performance, and extensibility, allowing you to have a powerful AI companion that runs entirely on your own hardware.
+The focus is privacy and control: your models, data, and conversation history stay on your hardware while the agent keeps context with structured storage and semantic memory.
+
+## Table of Contents
+
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+- [Running the Application](#running-the-application)
+- [Development Scripts](#development-scripts)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
-- **Local First:** All your data and models are stored and processed locally. No need to send your code or conversations to a third-party service.
+- **Local First:** All your data and models are stored and processed locally.
 - **Bring Your Own Model:** Works with any model supported by LM Studio.
 - **Rich Desktop App:** A cross-platform desktop application built with [Tauri](https://tauri.app/) and [React](https://react.dev/).
 - **Powerful Backend:** A [FastAPI](https://fastapi.tiangolo.com/) backend that orchestrates the AI agent, memory, and tool usage.
-- **Conversational Agent:** A sophisticated agent built with [LangGraph](https://langchain-ai.github.io/langgraph/) that can reason, use tools, and remember past interactions.
-- **Long-Term Memory:** Utilizes [Qdrant](https://qdrant.tech/) for efficient vector-based long-term memory, allowing the agent to recall information from past conversations.
-- **Tool Usage:** The agent can use a variety of tools to perform actions, such as searching the web, accessing files, and more.
-- **Developer Focused:** Designed with developers in mind, providing a powerful and extensible platform for building custom AI-powered workflows.
+- **Conversational Agent:** A [LangGraph](https://langchain-ai.github.io/langgraph/) agent that can reason, use tools, and remember past interactions.
+- **Long-Term Memory:** Uses [Qdrant](https://qdrant.tech/) for vector memory with [SQLite](https://www.sqlite.org/index.html) for structured data.
+- **Tool Usage:** The agent can invoke tools to search, read files, and interact with the system.
+- **Developer Focused:** Extensible architecture for building custom AI workflows.
+
+## Tech Stack
+
+- **Desktop UI:** Tauri, React, Vite, Tailwind CSS
+- **Backend API:** FastAPI, Pydantic, SQLAlchemy
+- **Agent Runtime:** LangGraph, LangChain core
+- **Storage:** SQLite (structured), Qdrant (vector memory)
+- **Local LLM:** LM Studio
 
 ## Architecture
 
-Serviq is a monorepo managed with `pnpm`. The project is divided into two main components:
+Serviq is a `pnpm` monorepo with two main components:
 
-- `apps/desktop`: A [Tauri](https://tauri.app/) application that provides the user interface. It's built with [React](https://react.dev/), [Vite](https://vitejs.dev/), and [Tailwind CSS](https://tailwindcss.com/).
-- `backend`: A [Python](https://www.python.org/) application built with [FastAPI](https://fastapi.tiangolo.com/) that serves the AI agent and API.
+- `apps/desktop`: Tauri + React desktop application.
+- `backend`: FastAPI service hosting the agent, memory, and APIs.
 
-The backend uses [LangGraph](https://langchain-ai.github.io/langgraph/) to create a stateful, multi-step agent. The agent's logic is defined in `backend/agent/graph.py`. It communicates with a local LLM through [LM Studio](https://lmstudio.ai/).
+The backend defines the agent graph in `backend/agent/graph.py`, connects to LM Studio for local inference, stores structured data in SQLite, and indexes semantic memory in Qdrant. The desktop app communicates with the backend over HTTP.
 
-For memory, Serviq uses a combination of [SQLite](https://www.sqlite.org/index.html) for structured data and [Qdrant](https://qdrant.tech/) for semantic vector search.
+## Project Structure
+
+- `apps/desktop`: Desktop UI (Tauri + React).
+- `backend`: FastAPI service and agent runtime.
+- `docker`: Local service assets (Qdrant storage).
+- `scripts`: Helper scripts for backend setup and diagnostics.
+- `.env.example`: Sample environment configuration.
+- `docker-compose.yml`: Qdrant service definition.
 
 ## Getting Started
 
@@ -38,62 +66,74 @@ For memory, Serviq uses a combination of [SQLite](https://www.sqlite.org/index.h
 
 ### Installation
 
-1.  **Clone the repository:**
+1. **Clone the repository:**
 
-    ```bash
-    git clone https://github.com/cRED-f/serviq.git
-    cd serviq
-    ```
+   ```bash
+   git clone https://github.com/cRED-f/serviq.git
+   cd serviq
+   ```
 
-2.  **Install frontend dependencies:**
+2. **Install frontend dependencies:**
 
-    ```bash
-    pnpm install
-    ```
+   ```bash
+   pnpm install
+   ```
 
-3.  **Install backend dependencies:**
+3. **Install backend dependencies (creates `backend/.venv`):**
 
-    ```bash
-    pnpm backend:install
-    ```
+   ```bash
+   pnpm backend:install
+   ```
 
-4.  **Start LM Studio:**
+4. **Start LM Studio:**
 
-    Open LM Studio, download a model, and start the local server.
+   Open LM Studio, download a model, and start the local server.
 
-### Running the Application
+## Configuration
 
-1.  **Start the Qdrant vector database:**
+The backend reads environment settings from a `.env` file at the repository root. Use `.env.example` as a starting point.
 
-    ```bash
-    docker compose up -d qdrant
-    ```
+Key settings include:
 
-2.  **Start the backend server:**
+- **App:** `APP_HOST`, `APP_PORT`, `APP_CORS_ORIGINS`
+- **Security:** `LOCAL_API_TOKEN`, `ENCRYPTION_KEY`
+- **LM Studio:** `LM_STUDIO_BASE_URL`, `LM_STUDIO_DEFAULT_CHAT_MODEL`
+- **Databases:** `SQLITE_DATABASE_URL`, `QDRANT_URL`, `QDRANT_COLLECTION`
+- **Workspace:** `WORKSPACE_DIR`, `UPLOADS_DIR`, `GENERATED_DIR`
 
-    ```bash
-    pnpm backend:dev
-    ```
+## Running the Application
 
-3.  **Run the desktop application:**
+1. **Start Qdrant:**
 
-    ```bash
-    pnpm desktop:dev
-    ```
+   ```bash
+   docker compose up -d qdrant
+   ```
 
-## Development
+2. **Start the backend server:**
 
-The `package.json` file at the root of the project contains all the necessary scripts for development.
+   ```bash
+   pnpm backend:dev
+   ```
 
-- `pnpm desktop:dev`: Starts the desktop app in development mode.
-- `pnpm desktop:build`: Builds the desktop app for production.
-- `pnpm frontend:dev`: Starts the frontend development server (Vite).
-- `pnpm backend:dev`: Starts the backend server in development mode.
-- `pnpm backend:install`: Installs backend dependencies.
-- `pnpm backend:check`: Runs checks on the backend code.
-- `pnpm qdrant:up`: Starts the Qdrant Docker container.
-- `pnpm qdrant:down`: Stops the Qdrant Docker container.
-- `pnpm doctor`: Checks if all the required dependencies and services are available.
+3. **Run the desktop application:**
+
+   ```bash
+   pnpm desktop:dev
+   ```
+
+## Development Scripts
+
+The root `package.json` provides the main workflow scripts:
+
+- `pnpm desktop:dev`: Start the desktop app (Tauri dev).
+- `pnpm desktop:build`: Build the desktop app (Tauri build).
+- `pnpm frontend:dev`: Start the Vite dev server only.
+- `pnpm backend:dev`: Start the FastAPI backend in dev mode.
+- `pnpm backend:install`: Create the backend virtual env and install dependencies.
+- `pnpm backend:check`: Run the backend health check endpoint.
+- `pnpm qdrant:up`: Start Qdrant.
+- `pnpm qdrant:down`: Stop Qdrant.
+- `pnpm doctor`: Verify required dependencies and services.
 
 ## Contributing
 
