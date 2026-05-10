@@ -1,0 +1,189 @@
+.setting-row--directory-access {
+  display: grid;
+  gap: 14px;
+}
+
+.directory-access-caution {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: 16px;
+  background: rgba(245, 158, 11, 0.08);
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.directory-access-caution strong {
+  color: #fde68a;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.directory-access-default {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  min-width: 0;
+}
+
+.directory-access-default span,
+.directory-access-input span {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.directory-access-default strong {
+  overflow-wrap: anywhere;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.directory-access-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.directory-access-input {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.directory-access-input input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.18);
+  color: #ffffff;
+  outline: none;
+  padding: 0 13px;
+}
+
+.directory-access-input input:focus {
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
+}
+
+.directory-access-add,
+.directory-access-item button {
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  cursor: pointer;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.directory-access-add:hover,
+.directory-access-item button:hover {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.14);
+}
+
+.directory-access-error {
+  margin: 0;
+  padding: 11px 13px;
+  border: 1px solid rgba(248, 113, 113, 0.28);
+  border-radius: 14px;
+  background: rgba(127, 29, 29, 0.22);
+  color: #fecaca;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.directory-access-list {
+  display: grid;
+  gap: 8px;
+}
+
+.directory-access-empty {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.directory-access-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.directory-access-item code {
+  overflow-wrap: anywhere;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.88);
+  padding: 0;
+}
+
+.directory-access-item button {
+  min-height: 34px;
+  border-color: rgba(248, 113, 113, 0.3);
+  color: #fecaca;
+  padding: 0 12px;
+}
+
+.directory-access-item button:hover {
+  border-color: rgba(248, 113, 113, 0.55);
+  background: rgba(127, 29, 29, 0.24);
+}
+
+@media (max-width: 760px) {
+  .directory-access-control,
+  .directory-access-item {
+    grid-template-columns: 1fr;
+  }
+}
+
+.setting-row--admin-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-shell-caution {
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(127, 29, 29, 0.16);
+}
+
+.admin-shell-caution strong {
+  color: #fecaca;
+}
+
+.admin-shell-switch {
+  justify-self: end;
+}
+
+@media (max-width: 760px) {
+  .setting-row--admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-shell-switch {
+    justify-self: stretch;
+  }
+}

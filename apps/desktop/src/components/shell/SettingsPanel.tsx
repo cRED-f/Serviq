@@ -1,7 +1,14 @@
+import { useEffect, useState } from "react";
 import type { ChatModel } from "../../lib/chatApi";
-import type { AnswerStyle } from "../../lib/runtimeSettingsApi";
+import {
+  getRuntimeSettings,
+  updateRuntimeSettings,
+  type AnswerStyle,
+} from "../../lib/runtimeSettingsApi";
+
 import "../../styles/settings-panel.css";
 import "../../styles/refresh-button-icon.css";
+import "../../styles/directory-access-settings.css";
 
 function RefreshIcon() {
   return (
@@ -15,7 +22,9 @@ function RefreshIcon() {
 function SettingDot({ active }: { active: boolean }) {
   return (
     <span
-      className={`setting-status-dot ${active ? "setting-status-dot--ready" : "setting-status-dot--missing"}`}
+      className={`setting-status-dot ${
+        active ? "setting-status-dot--ready" : "setting-status-dot--missing"
+      }`}
       aria-hidden="true"
     />
   );
@@ -31,11 +40,12 @@ function AnswerStyleSwitch({
   onChange: (style: AnswerStyle) => void;
 }) {
   const concise = value === "concise";
-
   return (
     <button
       type="button"
-      className={`settings-switch ${concise ? "settings-switch--on" : "settings-switch--off"}`}
+      className={`settings-switch ${
+        concise ? "settings-switch--on" : "settings-switch--off"
+      }`}
       onClick={() => onChange(concise ? "normal" : "concise")}
       disabled={disabled}
       aria-pressed={concise}
@@ -47,6 +57,253 @@ function AnswerStyleSwitch({
         {concise ? "Short and direct" : "Normal"}
       </span>
     </button>
+  );
+}
+
+function DirectoryAccessSettings() {
+  const [workspacePath, setWorkspacePath] = useState("");
+  const [directories, setDirectories] = useState<string[]>([]);
+  const [newDirectory, setNewDirectory] = useState("");
+  const [caution, setCaution] = useState(
+    "Only add specific project folders. Do not add root, drive, Windows, or system directories.",
+  );
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadDirectorySettings() {
+    setLoading(true);
+    try {
+      const settings = await getRuntimeSettings();
+      setWorkspacePath(settings.workspace_path);
+      setDirectories(settings.accessible_directories);
+      if (settings.directory_caution) {
+        setCaution(settings.directory_caution);
+      }
+      setError(null);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load directory access settings.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function saveDirectories(nextDirectories: string[]) {
+    setSaving(true);
+    try {
+      const settings = await updateRuntimeSettings({
+        accessible_directories: nextDirectories,
+      });
+      setWorkspacePath(settings.workspace_path);
+      setDirectories(settings.accessible_directories);
+      setNewDirectory("");
+      if (settings.directory_caution) {
+        setCaution(settings.directory_caution);
+      }
+      setError(null);
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Unable to save directory access settings.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleAddDirectory() {
+    const value = newDirectory.trim();
+    if (!value) {
+      setError("Enter a directory path first.");
+      return;
+    }
+
+    const duplicate = directories.some(
+      (directory) => directory.toLowerCase() === value.toLowerCase(),
+    );
+    if (duplicate) {
+      setError("This directory is already added.");
+      return;
+    }
+
+    await saveDirectories([...directories, value]);
+  }
+
+  async function handleRemoveDirectory(directoryToRemove: string) {
+    await saveDirectories(
+      directories.filter((directory) => directory !== directoryToRemove),
+    );
+  }
+
+  useEffect(() => {
+    void loadDirectorySettings();
+  }, []);
+
+  return (
+    <article className="setting-row setting-row--directory-access">
+      <div className="setting-row__main">
+        <div className="setting-row__title">
+          <SettingDot active />
+          <div>
+            <h3>Directory access</h3>
+            <p>Add folders Serviq can read, write, list, and use as shell cwd.</p>
+          </div>
+        </div>
+
+        <div className="directory-access-caution" role="note">
+          <strong>Caution</strong>
+          <span>{caution}</span>
+        </div>
+
+        <div className="directory-access-default">
+          <span>Default workspace</span>
+          <strong>{workspacePath || "Loading workspace..."}</strong>
+        </div>
+      </div>
+
+      <div className="directory-access-control">
+        <label className="directory-access-input">
+          <span>Add directory</span>
+          <input
+            value={newDirectory}
+            onChange={(event) => setNewDirectory(event.target.value)}
+            placeholder="Example: D:\\Projects\\MyApp or /home/fahim/projects/my-app"
+            disabled={loading || saving}
+          />
+        </label>
+        <button
+          type="button"
+          className="directory-access-add"
+          onClick={() => void handleAddDirectory()}
+          disabled={loading || saving || !newDirectory.trim()}
+        >
+          {saving ? "Saving..." : "Add"}
+        </button>
+      </div>
+
+      {error ? <p className="directory-access-error">{error}</p> : null}
+
+      <div className="directory-access-list">
+        {directories.length === 0 ? (
+          <p className="directory-access-empty">
+            No custom directories added. Serviq can only access the default workspace.
+          </p>
+        ) : (
+          directories.map((directory) => (
+            <div className="directory-access-item" key={directory}>
+              <code>{directory}</code>
+              <button
+                type="button"
+                onClick={() => void handleRemoveDirectory(directory)}
+                disabled={saving}
+              >
+                Remove
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+    </article>
+  );
+}
+
+function AdminShellSettings() {
+  const [enabled, setEnabled] = useState(false);
+  const [caution, setCaution] = useState(
+    "Windows only. Enabled shell commands launch with a UAC administrator prompt after approval.",
+  );
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadAdminShellSettings() {
+    setLoading(true);
+    try {
+      const settings = await getRuntimeSettings();
+      setEnabled(settings.shell_run_as_administrator);
+      if (settings.shell_admin_caution) {
+        setCaution(settings.shell_admin_caution);
+      }
+      setError(null);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load administrator shell settings.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleToggle() {
+    const nextEnabled = !enabled;
+    setSaving(true);
+    try {
+      const settings = await updateRuntimeSettings({
+        shell_run_as_administrator: nextEnabled,
+      });
+      setEnabled(settings.shell_run_as_administrator);
+      if (settings.shell_admin_caution) {
+        setCaution(settings.shell_admin_caution);
+      }
+      setError(null);
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Unable to save administrator shell settings.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadAdminShellSettings();
+  }, []);
+
+  return (
+    <article className="setting-row setting-row--admin-shell">
+      <div className="setting-row__main">
+        <div className="setting-row__title">
+          <SettingDot active={enabled} />
+          <div>
+            <h3>Run shell as administrator</h3>
+            <p>Use Windows UAC elevation for approved shell commands.</p>
+          </div>
+        </div>
+
+        <div className="directory-access-caution admin-shell-caution" role="note">
+          <strong>Caution</strong>
+          <span>{caution}</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className={`settings-switch admin-shell-switch ${
+          enabled ? "settings-switch--on" : "settings-switch--off"
+        }`}
+        onClick={() => void handleToggle()}
+        disabled={loading || saving}
+        aria-pressed={enabled}
+      >
+        <span className="settings-switch__track">
+          <span className="settings-switch__thumb" />
+        </span>
+        <span className="settings-switch__text">
+          {enabled ? "Administrator shell on" : "Administrator shell off"}
+        </span>
+      </button>
+
+      {error ? <p className="directory-access-error">{error}</p> : null}
+    </article>
   );
 }
 
@@ -75,12 +332,15 @@ export function SettingsPanel({
   onSelectAnswerStyle: (style: AnswerStyle) => void;
   onRefreshModels: () => void;
 }) {
-  const selectedModel = models.find((model) => model.id === selectedModelId) ?? null;
-  const selectedEmbeddingModel = models.find((model) => model.id === selectedEmbeddingModelId) ?? null;
-
-  const activeModelLabel = selectedModel?.name ?? (selectedModelId || "No chat model selected");
+  const selectedModel =
+    models.find((model) => model.id === selectedModelId) ?? null;
+  const selectedEmbeddingModel =
+    models.find((model) => model.id === selectedEmbeddingModelId) ?? null;
+  const activeModelLabel =
+    selectedModel?.name ?? (selectedModelId || "No chat model selected");
   const activeEmbeddingLabel =
-    selectedEmbeddingModel?.name ?? (selectedEmbeddingModelId || "No embedding model selected");
+    selectedEmbeddingModel?.name ??
+    (selectedEmbeddingModelId || "No embedding model selected");
 
   return (
     <section className="settings-panel">
@@ -88,9 +348,11 @@ export function SettingsPanel({
         <div>
           <span className="settings-panel__eyebrow">Settings</span>
           <h2>Settings</h2>
-          <p>Control Serviq model, memory embedding, and answer style.</p>
+          <p>
+            Control Serviq model, memory embedding, answer style, directory access,
+            and administrator shell mode.
+          </p>
         </div>
-
         <button
           type="button"
           className="settings-panel__refresh"
@@ -114,7 +376,6 @@ export function SettingsPanel({
                 <p>The local model Serviq uses to answer chat messages.</p>
               </div>
             </div>
-
             <div className="setting-row__current">
               <span>Selected</span>
               <strong>{activeModelLabel}</strong>
@@ -147,7 +408,6 @@ export function SettingsPanel({
                 <p>The model used for memory search and semantic recall.</p>
               </div>
             </div>
-
             <div className="setting-row__current">
               <span>Selected</span>
               <strong>{activeEmbeddingLabel}</strong>
@@ -180,7 +440,6 @@ export function SettingsPanel({
                 <p>Short and direct keeps answers precise. Normal allows longer explanations.</p>
               </div>
             </div>
-
             <AnswerStyleSwitch
               value={answerStyle}
               disabled={saving}
@@ -188,6 +447,9 @@ export function SettingsPanel({
             />
           </div>
         </article>
+
+        <DirectoryAccessSettings />
+        <AdminShellSettings />
       </div>
     </section>
   );

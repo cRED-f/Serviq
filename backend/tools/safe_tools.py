@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import ast
 import operator
-from pathlib import Path
 from typing import Any
 
-from core.config import settings
+from services.directory_access_store import (
+    describe_accessible_path,
+    resolve_accessible_path,
+)
 from tools.base import ToolDefinition, ToolExecutionContext, ToolResult, ToolRisk
-
 
 _ALLOWED_OPERATORS = {
     ast.Add: operator.add,
@@ -25,35 +26,24 @@ _ALLOWED_OPERATORS = {
 def _safe_calculate_node(node: ast.AST) -> float | int:
     if isinstance(node, ast.Expression):
         return _safe_calculate_node(node.body)
-
     if isinstance(node, ast.Constant) and isinstance(node.value, int | float):
         return node.value
-
     if isinstance(node, ast.BinOp) and type(node.op) in _ALLOWED_OPERATORS:
         left = _safe_calculate_node(node.left)
         right = _safe_calculate_node(node.right)
         return _ALLOWED_OPERATORS[type(node.op)](left, right)
-
     if isinstance(node, ast.UnaryOp) and type(node.op) in _ALLOWED_OPERATORS:
         operand = _safe_calculate_node(node.operand)
         return _ALLOWED_OPERATORS[type(node.op)](operand)
-
     raise ValueError("Expression contains unsupported syntax.")
 
 
-def _resolve_workspace_path(relative_path: str | None) -> Path:
-    workspace = settings.workspace_path.resolve()
-    candidate = (workspace / (relative_path or ".")).resolve()
-
-    if not candidate.is_relative_to(workspace):
-        raise ValueError("Path is outside the Serviq workspace.")
-
-    return candidate
+def _get_path_arg(args: dict[str, Any], default: str = ".") -> str:
+    return str(args.get("path") or args.get("relative_path") or default).strip() or default
 
 
 async def calculate_tool(args: dict[str, Any], context: ToolExecutionContext) -> ToolResult:
     expression = str(args.get("expression", "")).strip()
-
     if not expression:
         return ToolResult(
             name="calculate",
@@ -65,7 +55,6 @@ async def calculate_tool(args: dict[str, Any], context: ToolExecutionContext) ->
     try:
         parsed = ast.parse(expression, mode="eval")
         result = _safe_calculate_node(parsed)
-
         return ToolResult(
             name="calculate",
             ok=True,
@@ -84,36 +73,41 @@ async def calculate_tool(args: dict[str, Any], context: ToolExecutionContext) ->
         )
 
 
-async def list_workspace_files_tool(args: dict[str, Any], context: ToolExecutionContext) -> ToolResult:
-    relative_path = str(args.get("relative_path", ".")).strip() or "."
+async def list_workspace_files_tool(
+    args: dict[str, Any],
+    context: ToolExecutionContext,
+) -> ToolResult:
+    requested_path = _get_path_arg(args, ".")
 
     try:
-        directory = _resolve_workspace_path(relative_path)
-
+        directory = await resolve_accessible_path(requested_path, default=".")
         if not directory.exists():
             return ToolResult(
                 name="list_workspace_files",
                 ok=False,
                 risk=ToolRisk.LOW,
-                error=f"Path does not exist: {relative_path}",
+                error=f"Path does not exist: {requested_path}",
             )
-
         if not directory.is_dir():
             return ToolResult(
                 name="list_workspace_files",
                 ok=False,
                 risk=ToolRisk.LOW,
-                error=f"Path is not a directory: {relative_path}",
+                error=f"Path is not a directory: {requested_path}",
             )
 
-        entries = []
-        for item in sorted(directory.iterdir(), key=lambda path: (not path.is_dir(), path.name.lower())):
+        entries: list[dict[str, Any]] = []
+        for item in sorted(
+            directory.iterdir(),
+            key=lambda path: (not path.is_dir(), path.name.lower()),
+        ):
+            descriptor = await describe_accessible_path(item)
             entries.append(
                 {
                     "name": item.name,
-                    "relative_path": str(item.relative_to(settings.workspace_path.resolve())),
                     "type": "directory" if item.is_dir() else "file",
                     "size": item.stat().st_size if item.is_file() else None,
+                    **descriptor,
                 }
             )
 
@@ -122,7 +116,8 @@ async def list_workspace_files_tool(args: dict[str, Any], context: ToolExecution
             ok=True,
             risk=ToolRisk.LOW,
             output={
-                "relative_path": relative_path,
+                "requested_path": requested_path,
+                "directory": await describe_accessible_path(directory),
                 "entries": entries,
             },
         )
@@ -135,45 +130,45 @@ async def list_workspace_files_tool(args: dict[str, Any], context: ToolExecution
         )
 
 
-async def read_workspace_file_tool(args: dict[str, Any], context: ToolExecutionContext) -> ToolResult:
-    relative_path = str(args.get("relative_path", "")).strip()
+async def read_workspace_file_tool(
+    args: dict[str, Any],
+    context: ToolExecutionContext,
+) -> ToolResult:
+    requested_path = _get_path_arg(args, "")
     max_chars = int(args.get("max_chars", 12000))
-
-    if not relative_path:
+    if not requested_path:
         return ToolResult(
             name="read_workspace_file",
             ok=False,
             risk=ToolRisk.LOW,
-            error="Missing relative_path.",
+            error="Missing path.",
         )
 
     try:
-        file_path = _resolve_workspace_path(relative_path)
-
+        file_path = await resolve_accessible_path(requested_path, default="")
         if not file_path.exists():
             return ToolResult(
                 name="read_workspace_file",
                 ok=False,
                 risk=ToolRisk.LOW,
-                error=f"File does not exist: {relative_path}",
+                error=f"File does not exist: {requested_path}",
             )
-
         if not file_path.is_file():
             return ToolResult(
                 name="read_workspace_file",
                 ok=False,
                 risk=ToolRisk.LOW,
-                error=f"Path is not a file: {relative_path}",
+                error=f"Path is not a file: {requested_path}",
             )
 
         content = file_path.read_text(encoding="utf-8", errors="replace")
-
         return ToolResult(
             name="read_workspace_file",
             ok=True,
             risk=ToolRisk.LOW,
             output={
-                "relative_path": relative_path,
+                "requested_path": requested_path,
+                **await describe_accessible_path(file_path),
                 "content": content[:max_chars],
                 "truncated": len(content) > max_chars,
                 "size": file_path.stat().st_size,
@@ -191,7 +186,6 @@ async def read_workspace_file_tool(args: dict[str, Any], context: ToolExecutionC
 async def search_memory_tool(args: dict[str, Any], context: ToolExecutionContext) -> ToolResult:
     query = str(args.get("query", "")).strip()
     limit = int(args.get("limit", 5))
-
     if not query:
         return ToolResult(
             name="search_memory",
@@ -221,7 +215,6 @@ async def save_note_tool(args: dict[str, Any], context: ToolExecutionContext) ->
     title = str(args.get("title", "")).strip()
     content = str(args.get("content", "")).strip()
     tags_value = args.get("tags", [])
-
     if isinstance(tags_value, str):
         tags = [tag.strip() for tag in tags_value.split(",") if tag.strip()]
     elif isinstance(tags_value, list):
@@ -246,7 +239,6 @@ async def save_note_tool(args: dict[str, Any], context: ToolExecutionContext) ->
             source="tool:save_note",
             index_vector=True,
         )
-
         return ToolResult(
             name="save_note",
             ok=True,
@@ -278,11 +270,16 @@ SAFE_TOOL_DEFINITIONS = [
     ),
     ToolDefinition(
         name="list_workspace_files",
-        description="List files and folders inside the Serviq workspace.",
+        description=(
+            "List files and folders inside the Serviq workspace or any directory "
+            "enabled in Settings. Relative paths use the workspace. Absolute paths "
+            "must be inside an enabled directory."
+        ),
         risk=ToolRisk.LOW,
         parameters={
             "type": "object",
             "properties": {
+                "path": {"type": "string", "default": "."},
                 "relative_path": {"type": "string", "default": "."},
             },
         },
@@ -290,15 +287,19 @@ SAFE_TOOL_DEFINITIONS = [
     ),
     ToolDefinition(
         name="read_workspace_file",
-        description="Read a UTF-8 text file inside the Serviq workspace.",
+        description=(
+            "Read a UTF-8 text file inside the Serviq workspace or an enabled "
+            "custom directory."
+        ),
         risk=ToolRisk.LOW,
         parameters={
             "type": "object",
             "properties": {
+                "path": {"type": "string"},
                 "relative_path": {"type": "string"},
                 "max_chars": {"type": "integer", "default": 12000},
             },
-            "required": ["relative_path"],
+            "required": ["path"],
         },
         handler=read_workspace_file_tool,
     ),
