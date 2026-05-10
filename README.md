@@ -41,7 +41,7 @@ For memory, Serviq uses a combination of [SQLite](https://www.sqlite.org/index.h
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/your-username/serviq.git
+    git clone https://github.com/cRED-f/serviq.git
     cd serviq
     ```
 
