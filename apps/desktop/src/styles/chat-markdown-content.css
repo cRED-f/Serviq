@@ -1,0 +1,103 @@
+/* Serviq markdown rendering for readable chat output */
+
+.markdown-content {
+  display: grid;
+  gap: 0.65rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.markdown-content > * {
+  margin: 0;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  color: #ffffff;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.markdown-content h1 {
+  font-size: 1.55rem;
+}
+
+.markdown-content h2 {
+  font-size: 1.35rem;
+}
+
+.markdown-content h3 {
+  font-size: 1.15rem;
+}
+
+.markdown-content h4 {
+  font-size: 1rem;
+}
+
+.markdown-content p {
+  line-height: 1.6;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  display: grid;
+  gap: 0.35rem;
+  padding-left: 1.2rem;
+}
+
+.markdown-content li {
+  line-height: 1.55;
+}
+
+.markdown-content strong {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.markdown-content code {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.95);
+  padding: 0.12rem 0.32rem;
+  font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  font-size: 0.92em;
+}
+
+.markdown-content pre {
+  position: relative;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.105);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.24);
+  padding: 0.95rem;
+}
+
+.markdown-content pre code {
+  display: block;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  white-space: pre;
+  line-height: 1.55;
+}
+
+.markdown-content__language {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.68);
+  padding: 0.25rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chat-message__content {
+  white-space: normal;
+}

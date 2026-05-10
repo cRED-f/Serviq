@@ -1,0 +1,38 @@
+/* Runtime settings additions */
+
+.settings-panel__grid--runtime {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(240px, 0.72fr);
+}
+
+.settings-model-row__tags {
+  display: inline-flex;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.settings-model-row__tags strong {
+  display: inline-flex;
+  border-radius: 999px;
+  background: rgba(99, 217, 141, 0.14);
+  color: #d9ffe5;
+  padding: 4px 7px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1180px) {
+  .settings-panel__grid--runtime {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-model-row__tags {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    justify-content: flex-start;
+  }
+}

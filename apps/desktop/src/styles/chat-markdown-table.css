@@ -1,0 +1,42 @@
+/* Markdown table rendering for Serviq chat output */
+
+.markdown-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.105);
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.markdown-table {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.94rem;
+}
+
+.markdown-table th,
+.markdown-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.45;
+}
+
+.markdown-table th {
+  background: rgba(255, 255, 255, 0.075);
+  color: #ffffff;
+  font-weight: 850;
+}
+
+.markdown-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.markdown-table td code,
+.markdown-table th code {
+  white-space: nowrap;
+}

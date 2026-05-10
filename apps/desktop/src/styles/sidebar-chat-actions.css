@@ -1,0 +1,22 @@
+/* Serviq Chat Process 1E: larger sidebar action icons */
+
+.sidebar-delete-icon {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.15;
+}
+
+.sidebar-history-delete {
+  width: 30px;
+  height: 30px;
+  right: 5px;
+}
+
+.sidebar-history-item {
+  padding-right: 40px;
+}
+
+.sidebar-action-button__icon,
+.sidebar-history-item__icon {
+  font-size: 16px;
+}

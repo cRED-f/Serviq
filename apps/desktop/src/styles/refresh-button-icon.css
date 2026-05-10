@@ -1,0 +1,25 @@
+/* Shared refresh icon for Tools and Settings buttons */
+
+.settings-panel__refresh,
+.tools-panel__refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.refresh-button-icon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.05;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.settings-panel__refresh:disabled .refresh-button-icon,
+.tools-panel__refresh:disabled .refresh-button-icon {
+  opacity: 0.75;
+}

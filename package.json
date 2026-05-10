@@ -1,0 +1,21 @@
+{
+  "name": "serviq",
+  "private": true,
+  "version": "0.2.0",
+  "description": "Serviq: a production-grade local AI agent powered by LM Studio, FastAPI, LangGraph, Tauri, SQLite, and Qdrant.",
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "desktop:dev": "pnpm --dir apps/desktop tauri dev",
+    "desktop:build": "pnpm --dir apps/desktop tauri build",
+    "frontend:dev": "pnpm --dir apps/desktop dev",
+    "backend:dev": "node scripts/dev-backend.mjs",
+    "backend:install": "node scripts/install-backend.mjs",
+    "backend:check": "node scripts/backend-check.mjs",
+    "qdrant:up": "docker compose up -d qdrant",
+    "qdrant:down": "docker compose down",
+    "doctor": "node scripts/doctor.mjs"
+  },
+  "workspaces": [
+    "apps/*"
+  ]
+}

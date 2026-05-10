@@ -1,0 +1,302 @@
+/* Serviq Settings: clean vertical layout */
+
+.settings-panel {
+  display: grid;
+  height: 100%;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 14px;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.032);
+  box-shadow:
+    0 16px 42px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(14px);
+  padding: 22px;
+}
+
+.settings-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-panel__eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.settings-panel__header h2 {
+  margin: 10px 0 8px;
+  color: #ffffff;
+  font-size: clamp(2rem, 2.8vw, 3rem);
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+}
+
+.settings-panel__header p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.settings-panel__refresh {
+  display: inline-flex;
+  min-height: 38px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.045));
+  color: #ffffff;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.settings-panel__refresh:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.settings-panel__error {
+  margin: 0;
+  border: 1px solid rgba(255, 157, 157, 0.2);
+  border-radius: 16px;
+  background: rgba(176, 60, 60, 0.14);
+  color: #ffd7d7;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.settings-list {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.settings-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.settings-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.setting-row {
+  display: grid;
+  gap: 14px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.095);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.028));
+  padding: 16px;
+}
+
+.setting-row__main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.setting-row__title {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.setting-status-dot {
+  width: 13px;
+  height: 13px;
+  margin-top: 4px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.setting-status-dot--ready {
+  background: #d9ffe5;
+  box-shadow: 0 0 0 6px rgba(99, 217, 141, 0.08), 0 0 18px rgba(99, 217, 141, 0.2);
+}
+
+.setting-status-dot--missing {
+  background: #ffce61;
+  box-shadow: 0 0 0 6px rgba(255, 206, 97, 0.07), 0 0 18px rgba(255, 206, 97, 0.17);
+}
+
+.setting-row h3 {
+  margin: 0 0 5px;
+  color: #ffffff;
+  font-size: 1.05rem;
+  letter-spacing: -0.025em;
+}
+
+.setting-row p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.setting-row__current {
+  display: grid;
+  min-width: min(360px, 42%);
+  gap: 5px;
+  text-align: right;
+}
+
+.setting-row__current span {
+  color: rgba(255, 255, 255, 0.44);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.setting-row__current strong {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-select {
+  display: grid;
+  gap: 7px;
+}
+
+.settings-select span {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.settings-select select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.115);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.035)),
+    #121212;
+  color: #ffffff;
+  outline: none;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.settings-select select:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.settings-switch {
+  display: inline-flex;
+  min-width: 190px;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.065);
+  color: rgba(255, 255, 255, 0.82);
+  padding: 5px 12px 5px 5px;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.settings-switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.settings-switch__track {
+  position: relative;
+  display: block;
+  width: 54px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.settings-switch__thumb {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.settings-switch--on {
+  border-color: rgba(99, 217, 141, 0.24);
+  background: rgba(99, 217, 141, 0.12);
+  color: #e1ffe9;
+}
+
+.settings-switch--on .settings-switch__track {
+  background: rgba(99, 217, 141, 0.2);
+}
+
+.settings-switch--on .settings-switch__thumb {
+  left: 28px;
+  background: #d9ffe5;
+}
+
+.settings-switch--off {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 860px) {
+  .settings-panel {
+    overflow-y: auto;
+  }
+
+  .settings-panel__header,
+  .setting-row__main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .setting-row__current {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .settings-switch {
+    width: 100%;
+  }
+}

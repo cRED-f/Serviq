@@ -1,0 +1,118 @@
+/* Serviq Chat Process 1E: bigger icons, user copy, compact approval card */
+
+.chat-action-icon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
+.chat-button-icon {
+  width: 23px;
+  height: 23px;
+}
+
+.chat-message-actions button {
+  min-height: 34px;
+  padding: 0 12px;
+  gap: 8px;
+}
+
+.chat-message-actions--user {
+  justify-content: flex-end;
+  border-top-color: rgba(255, 255, 255, 0.05);
+}
+
+.chat-message-actions--user button {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.chat-message-steps summary {
+  color: #e8fff0;
+  background:
+    linear-gradient(90deg, rgba(99, 217, 141, 0.22), rgba(255, 255, 255, 0.07));
+}
+
+.chat-message-steps__summary-icon {
+  width: 26px;
+  height: 26px;
+  font-size: 15px;
+}
+
+.agent-step-tree__node {
+  width: 12px;
+  height: 12px;
+}
+
+.approval-card {
+  display: grid;
+  width: fit-content;
+  max-width: min(620px, 92%);
+  gap: 10px;
+  align-self: flex-start;
+  border: 1px solid rgba(255, 206, 97, 0.2);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 206, 97, 0.12), rgba(255, 255, 255, 0.035));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  padding: 13px;
+}
+
+.approval-card__body {
+  display: grid;
+  gap: 5px;
+}
+
+.approval-card__label {
+  color: #fff0c7;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.approval-card strong {
+  color: #ffffff;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.approval-card p {
+  margin: 0;
+  max-width: 520px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.approval-card__error {
+  color: #ffd7d7;
+  font-size: 12px;
+}
+
+.approval-card__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.approval-card__actions button {
+  min-height: 34px;
+  border: 1px solid rgba(99, 217, 141, 0.24);
+  border-radius: 999px;
+  background: rgba(99, 217, 141, 0.14);
+  color: #e1ffe9;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.approval-card__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.approval-card__reject {
+  border-color: rgba(255, 157, 157, 0.18) !important;
+  background: rgba(176, 60, 60, 0.12) !important;
+  color: #ffd7d7 !important;
+}

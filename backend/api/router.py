@@ -1,0 +1,19 @@
+from fastapi import APIRouter
+
+from api.routes import agent, approvals, chat, conversations, health, llm, memory, system, tools, ws, tool_settings, memory_center, runtime_settings
+
+api_router = APIRouter()
+
+api_router.include_router(health.router)
+api_router.include_router(system.router)
+api_router.include_router(chat.router)
+api_router.include_router(ws.router)
+api_router.include_router(llm.router)
+api_router.include_router(agent.router)
+api_router.include_router(memory.router)
+api_router.include_router(tools.router)
+api_router.include_router(approvals.router)
+api_router.include_router(conversations.router)
+api_router.include_router(tool_settings.router)
+api_router.include_router(memory_center.router)
+api_router.include_router(runtime_settings.router)

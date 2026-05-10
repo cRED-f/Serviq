@@ -1,0 +1,13 @@
+.screen-error-banner {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 10;
+  max-width: 520px;
+  border: 1px solid rgba(255, 157, 157, 0.2);
+  border-radius: 16px;
+  background: rgba(176, 60, 60, 0.16);
+  color: #ffd7d7;
+  padding: 10px 12px;
+  font-size: 13px;
+}

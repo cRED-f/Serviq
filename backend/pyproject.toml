@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "serviq-backend"
+version = "0.2.0"
+description = "Local production FastAPI backend for Serviq."
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi[standard]>=0.115",
+  "uvicorn[standard]>=0.34",
+  "pydantic>=2.10",
+  "pydantic-settings>=2.7",
+  "python-dotenv>=1.0",
+  "openai>=1.59",
+  "httpx>=0.28",
+  "sqlalchemy>=2.0",
+  "aiosqlite>=0.20",
+  "alembic>=1.14",
+  "qdrant-client>=1.12",
+  "langgraph>=0.2",
+  "langchain-core>=0.3",
+  "structlog>=24.4",
+  "rich>=13.9",
+  "python-multipart>=0.0.20",
+  "pypdf>=5.1",
+  "python-docx>=1.1",
+  "beautifulsoup4>=4.12",
+  "markdown>=3.7",
+  "apscheduler>=3.10",
+  "watchdog>=6.0",
+  "keyring>=25.6",
+  "cryptography>=44.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.25",
+  "ruff>=0.8",
+  "mypy>=1.14"
+]
+
+[tool.setuptools]
+packages = [
+  "api",
+  "api.routes",
+  "core",
+  "db",
+  "schemas",
+  "services",
+  "agent",
+  "llm",
+  "tools",
+  "memory",
+  "scheduler",
+  "sandbox"
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
