@@ -1,7 +1,7 @@
 # Serviq
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.2.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/Version-beta 0.2.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
   <img src="https://img.shields.io/badge/Platform-Windows-lightgrey" alt="Platform">
 </p>
