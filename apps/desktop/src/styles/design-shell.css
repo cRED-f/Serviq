@@ -3,7 +3,7 @@
 :root {
   color-scheme: dark;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #27272a;
+  background: linear-gradient(135deg, #0d1117 0%, #0a0a12 50%, #0f0f1a 100%);
   color: #f7f7f7;
 }
 
@@ -20,7 +20,7 @@ body,
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background: #27272a;
+  background: linear-gradient(135deg, #0d1117 0%, #0a0a12 50%, #0f0f1a 100%);
   color: #f7f7f7;
 }
 
@@ -42,7 +42,7 @@ button {
   background:
     radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.045), transparent 24%),
     radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.032), transparent 22%),
-    linear-gradient(135deg, #1f1f23 0%, #27272a 42%, #2d2d30 100%);
+    linear-gradient(135deg, #0d1117 0%, #0a0a12 42%, #0f0f1a 100%);
 }
 
 .design-shell__background {
@@ -50,8 +50,8 @@ button {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(rgba(255, 255, 255, 0.014) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: radial-gradient(circle at center, black, transparent 82%);
 }
