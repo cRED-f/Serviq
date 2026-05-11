@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent.prompts import SERVIQ_SYSTEM_PROMPT, classify_message_locally
+from agent.prompts import get_merged_system_prompt, classify_message_locally
 from llm.lmstudio_client import LMStudioClient
 
 
@@ -38,7 +38,7 @@ async def run_direct_agent(
     messages = [
         {
             "role": "system",
-            "content": SERVIQ_SYSTEM_PROMPT,
+            "content": get_merged_system_prompt(),
         },
         *cleaned_history[-8:],
         {

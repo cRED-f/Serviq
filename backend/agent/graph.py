@@ -12,7 +12,7 @@ except ModuleNotFoundError:  # pragma: no cover - runtime dependency guard.
     StateGraph = None  # type: ignore[assignment]
     Command = None  # type: ignore[assignment]
 
-from agent.prompts import SERVIQ_SYSTEM_PROMPT, classify_message_locally
+from agent.prompts import get_merged_system_prompt, classify_message_locally
 from agent.state import ServiqAgentState
 from agent.task_loop import run_agent_task_loop, AgentTaskLoopResult
 from llm.lmstudio_client import LMStudioClient
@@ -117,7 +117,7 @@ class ServiqAgentRunner:
         prepared_messages: list[dict[str, str]] = [
             {
                 "role": "system",
-                "content": SERVIQ_SYSTEM_PROMPT,
+                "content": get_merged_system_prompt(),
             },
             *existing_messages[-8:],
             {

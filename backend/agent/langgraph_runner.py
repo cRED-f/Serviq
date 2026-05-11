@@ -7,7 +7,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from agent.conversation_recall import ConversationRecallService
-from agent.prompts import SERVIQ_SYSTEM_PROMPT, classify_message_locally
+from agent.prompts import get_merged_system_prompt, classify_message_locally
 from agent.task_loop import run_agent_task_loop
 from llm.lmstudio_client import LMStudioClient
 from memory.service import MemoryService
@@ -275,7 +275,7 @@ async def prepare_context_node(state: ServiqGraphState | dict[str, Any]) -> dict
     prepared_messages = [
         {
             "role": "system",
-            "content": SERVIQ_SYSTEM_PROMPT
+            "content": get_merged_system_prompt()
             + "\n\nMemory policy: Do not assume long-term memory is already present. "
             "When the user asks about saved preferences, past facts, remembered information, or personal/project context, "
             "use the `search_memory` tool if available.",

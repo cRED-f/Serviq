@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass, field
 from typing import Any
 
-from agent.prompts import SERVIQ_SYSTEM_PROMPT
+from agent.prompts import get_merged_system_prompt
 from agent.tool_planner import AgentToolPlan, plan_next_action
 from llm.lmstudio_client import LMStudioClient
 from memory.service import MemoryService
@@ -80,7 +80,7 @@ def build_final_answer_messages(
         {
             "role": "system",
             "content": (
-                f"{SERVIQ_SYSTEM_PROMPT}\n\n"
+                f"{get_merged_system_prompt()}\n\n"
                 "You are writing the final answer after Serviq completed one or more local tool steps.\n"
                 "Use only the memory context and actual tool observations below.\n"
                 "Keep the answer short and direct. For a simple tool success/failure, use 1-3 sentences.\n"
