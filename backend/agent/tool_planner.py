@@ -439,8 +439,8 @@ Rules:
 - If the user asks about remembered preferences, previous facts, saved facts, personal/project context, or "what did I say", choose search_memory.
 - Do not call search_memory repeatedly with the same query if it already appears in observations.
 - Do not call the same tool with the same args again if its result is already in observations.
-- If the user asks to write/create/replace a file, choose write_workspace_file after any needed read/list checks.
-- If the user asks to rename/change the name of one file, choose rename_workspace_file.
+- If the user asks to write/create/replace a file, choose write_workspace_file. Use path format 'dir:0/file.js' for custom directories (dir:0 = first custom directory in Settings, dir:1 = second, etc.), or absolute paths like 'C:\\Users\\fahim\\Downloads\\file.js'.
+- If the user asks to rename/change the name of one file, choose rename_workspace_file. Works with 'dir:0/file.txt', 'dir:1/file.txt', or absolute paths.
 - Never use run_shell_command for file rename requests. Do not plan Rename-Item, ren, mv, or move for natural-language rename requests.
 - If the user asks to delete/remove/erase one file and delete_workspace_file is available, choose delete_workspace_file.
 - Never use run_shell_command for file deletion. Do not plan rm, del, erase, rmdir, rd, or Remove-Item for natural-language delete-file requests.
@@ -448,9 +448,11 @@ Rules:
 - For terminal/current directory/process/package checks, choose run_shell_command.
 - Preserve exact requested shell commands when the user explicitly asks for terminal/shell/cmd/powershell.
 - For listing local workspace files without terminal/shell/command language, choose list_workspace_files.
-- For reading workspace files, choose read_workspace_file.
+- Virtual paths: "workspace" = workspace root, "dir:0" = first custom directory in Settings, "dir:1" = second, etc. Use list_workspace_files with these paths.
+- For reading workspace files or files in custom directories, choose read_workspace_file. Use 'dir:0/file.txt', 'dir:1/file.txt', or absolute paths.
 - For checking package.json scripts, list workspace files first, then read package.json if it exists.
 - For arithmetic, choose calculate.
+- For appending text to a file, choose append_workspace_file. Use 'dir:0/file.txt' or absolute paths.
 - For saving a memory/note, choose save_note.
 - For searching memory, choose search_memory.
 - Do not invent tool names.

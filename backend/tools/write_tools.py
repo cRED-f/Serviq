@@ -390,8 +390,10 @@ WRITE_TOOL_DEFINITIONS = [
     ToolDefinition(
         name="write_workspace_file",
         description=(
-            "Write a UTF-8 text file inside the Serviq workspace or an enabled "
-            "custom directory. Requires approval."
+            "Write a UTF-8 text file to workspace or any custom directory enabled in Settings. "
+            "Use path formats: 'workspace/file.txt' for workspace, 'dir:0/file.txt' for first custom directory "
+            "(e.g., 'dir:0/nkn.js' writes to C:\\Users\\fahim\\Downloads), 'dir:1/file.txt' for second, etc. "
+            "Also accepts absolute paths like 'C:\\Users\\fahim\\Downloads\\file.txt'. Requires approval."
         ),
         risk=ToolRisk.MEDIUM,
         parameters={
@@ -409,8 +411,8 @@ WRITE_TOOL_DEFINITIONS = [
     ToolDefinition(
         name="append_workspace_file",
         description=(
-            "Append UTF-8 text to a file inside the Serviq workspace or an enabled "
-            "custom directory. Requires approval."
+            "Append UTF-8 text to a file in workspace or any custom directory enabled in Settings. "
+            "Use 'workspace/file.txt', 'dir:0/file.txt', 'dir:1/file.txt', or absolute paths. Requires approval."
         ),
         risk=ToolRisk.MEDIUM,
         parameters={
@@ -427,7 +429,8 @@ WRITE_TOOL_DEFINITIONS = [
     ToolDefinition(
         name="rename_workspace_file",
         description=(
-            "Rename one file inside the Serviq workspace or an enabled custom directory. "
+            "Rename one file in workspace or any custom directory enabled in Settings. "
+            "Use 'workspace/file.txt', 'dir:0/file.txt', 'dir:1/file.txt', or absolute paths. "
             "Use this for rename/change filename requests instead of shell commands like "
             "Rename-Item, ren, mv, or move. Directories are refused. Requires approval."
         ),

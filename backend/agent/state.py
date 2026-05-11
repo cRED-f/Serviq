@@ -18,6 +18,7 @@ class ServiqAgentState(TypedDict, total=False):
 
     route: AgentRoute
     response: str
+    use_tools: bool
 
     steps: list[str]
     metadata: dict[str, Any]

@@ -271,9 +271,10 @@ SAFE_TOOL_DEFINITIONS = [
     ToolDefinition(
         name="list_workspace_files",
         description=(
-            "List files and folders inside the Serviq workspace or any directory "
-            "enabled in Settings. Relative paths use the workspace. Absolute paths "
-            "must be inside an enabled directory."
+            "List files and folders inside the Serviq workspace or any custom directory "
+            "enabled in Settings. Use 'workspace' for workspace root, 'dir:0' for first custom directory, "
+            "'dir:1' for second, etc. Works with any path that resolves to an enabled directory - "
+            "both absolute paths like 'C:\\Users\\fahim\\Downloads' and relative paths."
         ),
         risk=ToolRisk.LOW,
         parameters={
@@ -288,8 +289,9 @@ SAFE_TOOL_DEFINITIONS = [
     ToolDefinition(
         name="read_workspace_file",
         description=(
-            "Read a UTF-8 text file inside the Serviq workspace or an enabled "
-            "custom directory."
+            "Read a UTF-8 text file inside the Serviq workspace or any custom directory "
+            "enabled in Settings. Use 'workspace/file.txt', 'dir:0/file.txt', or absolute paths "
+            "like 'C:\\Users\\fahim\\Downloads\\file.txt'. File must be inside an enabled directory."
         ),
         risk=ToolRisk.LOW,
         parameters={
