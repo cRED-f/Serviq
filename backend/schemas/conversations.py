@@ -23,6 +23,8 @@ class ConversationMessageResponse(BaseModel):
     content: str
     model: str | None = None
     route: str | None = None
+    steps: list[str] = Field(default_factory=list)
+    task_trace: list[dict[str, Any]] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: str
 

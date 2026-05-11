@@ -19,6 +19,25 @@ export type AgentRunResponse = {
   response: string;
   steps: string[];
   metadata: Record<string, unknown>;
+  task_trace?: AgentTaskTrace[];
+};
+
+export type AgentTaskTrace = {
+  step: number;
+  type: string;
+  plan?: {
+    action: string;
+    tool_name: string;
+    args: Record<string, unknown>;
+    reason: string;
+    confidence: number;
+  };
+  tool_result?: {
+    name: string;
+    ok: boolean;
+    output?: unknown;
+    error?: string;
+  };
 };
 
 function getErrorMessageFromBody(rawBody: string): string {

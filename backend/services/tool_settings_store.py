@@ -85,6 +85,22 @@ DEFAULT_TOOL_CATALOG: list[dict[str, Any]] = [
         "risk": "medium",
         "enabled_by_default": True,
     },
+    {
+        "id": "web_search",
+        "name": "Web search",
+        "description": "Search the web using DuckDuckGo to find current information.",
+        "icon": "search",
+        "risk": "medium",
+        "enabled_by_default": True,
+    },
+    {
+        "id": "web_fetch",
+        "name": "Web fetch",
+        "description": "Fetch and extract content from a webpage.",
+        "icon": "globe",
+        "risk": "medium",
+        "enabled_by_default": True,
+    },
 ]
 
 TOOL_ALIASES: dict[str, str] = {

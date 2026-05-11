@@ -10,6 +10,7 @@ from tools.policy import evaluate_tool_policy
 from tools.safe_tools import SAFE_TOOL_DEFINITIONS
 from tools.shell_tools import SHELL_TOOL_DEFINITIONS
 from tools.write_tools import WRITE_TOOL_DEFINITIONS
+from tools.web_tools import WEB_TOOL_DEFINITIONS
 
 
 class ToolNotFoundError(RuntimeError):
@@ -28,6 +29,7 @@ class ToolRegistry:
             *SAFE_TOOL_DEFINITIONS,
             *WRITE_TOOL_DEFINITIONS,
             *SHELL_TOOL_DEFINITIONS,
+            *WEB_TOOL_DEFINITIONS,
         ]
         self.definitions = {tool.name: tool for tool in all_definitions}
         self.log_store = log_store or ToolExecutionLogStore()

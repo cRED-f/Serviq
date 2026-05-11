@@ -8,6 +8,9 @@ import {
   type ApprovalDecisionResponse,
 } from "../../lib/chatApi";
 import {
+  type AgentTaskTrace,
+} from "../../lib/agentApi";
+import {
   deleteAssistantMessagePair,
   deleteConversationMessage,
   saveConversationMessage,
@@ -23,6 +26,7 @@ export type UIChatMessage = {
   createdAt: string;
   status?: "sending" | "done" | "error";
   steps?: string[];
+  task_trace?: AgentTaskTrace[];
   metadata?: Record<string, unknown>;
 };
 
@@ -490,10 +494,13 @@ function DeleteIcon() {
   );
 }
 
-function StepsPreview({ steps }: { steps?: string[] }) {
-  if (!steps?.length) {
+function StepsPreview({ steps, task_trace }: { steps?: string[]; task_trace?: AgentTaskTrace[] }) {
+  if (!steps?.length && !task_trace?.length) {
     return null;
   }
+
+  // If we have detailed task_trace, use it for richer display
+  const hasDetailedTrace = task_trace && task_trace.length > 0;
 
   return (
     <details className="chat-message-steps">
@@ -503,13 +510,43 @@ function StepsPreview({ steps }: { steps?: string[] }) {
       </summary>
 
       <ol className="agent-step-tree">
-        {steps.map((step, index) => (
-          <li key={`${step}-${index}`} className="agent-step-tree__item">
-            <span className="agent-step-tree__line" aria-hidden="true" />
-            <span className="agent-step-tree__node" aria-hidden="true" />
-            <span className="agent-step-tree__text">{friendlyStepLabel(step)}</span>
-          </li>
-        ))}
+        {hasDetailedTrace
+          ? task_trace.map((trace, index) => {
+              const stepLabel = trace.type === "plan"
+                ? `Step ${trace.step}: Planning (${trace.plan?.action || "unknown"})`
+                : trace.type === "tool_call"
+                  ? `Step ${trace.step}: Executing ${trace.plan?.tool_name || "tool"}`
+                  : trace.type === "tool_result"
+                    ? `Step ${trace.step}: ${trace.tool_result?.ok ? "Success" : "Failed"}`
+                    : `Step ${trace.step}: ${trace.type}`;
+
+              return (
+                <li key={`trace-${index}`} className="agent-step-tree__item">
+                  <span className="agent-step-tree__line" aria-hidden="true" />
+                  <span className="agent-step-tree__node" aria-hidden="true" />
+                  <span className="agent-step-tree__text">{stepLabel}</span>
+                  {trace.plan?.reason && (
+                    <div className="agent-step-tree__detail">
+                      Reason: {trace.plan.reason}
+                    </div>
+                  )}
+                  {trace.tool_result?.output && (
+                    <div className="agent-step-tree__detail">
+                      Output: {typeof trace.tool_result.output === "string"
+                        ? trace.tool_result.output.slice(0, 100)
+                        : JSON.stringify(trace.tool_result.output).slice(0, 100)}
+                    </div>
+                  )}
+                </li>
+              );
+            })
+          : steps.map((step, index) => (
+              <li key={`${step}-${index}`} className="agent-step-tree__item">
+                <span className="agent-step-tree__line" aria-hidden="true" />
+                <span className="agent-step-tree__node" aria-hidden="true" />
+                <span className="agent-step-tree__text">{friendlyStepLabel(step)}</span>
+              </li>
+            ))}
       </ol>
     </details>
   );
@@ -753,6 +790,7 @@ export function ChatWorkspace({
         content: assistantResponse,
         steps: response.steps ?? [],
         metadata: response.metadata ?? {},
+        task_trace: response.task_trace ?? [],
       });
 
       onMessagesChange(realChatId, (currentMessages) => [...currentMessages, savedAssistantMessage]);
@@ -846,12 +884,22 @@ export function ChatWorkspace({
         setApprovalLoadingText(PROCESS_COMPLETE_TEXT);
         await delay(1200);
 
+        // Extract actual steps from approval result
+        const resultMetadata = result.metadata ?? {};
+        const approvalData = result.approval ?? {};
+        const toolName = approvalData.tool_name ?? "tool";
+        const steps = [
+          `execute_${toolName}`,
+          "finalize_response"
+        ];
+
         const savedAssistantMessage = await saveConversationMessage({
           sessionId: approvalSnapshot.chatId,
           role: "assistant",
           content: assistantResponse,
-          steps: ["execute_tool_1", "finalize_response"],
-          metadata: result.metadata ?? {},
+          steps: steps,
+          task_trace: resultMetadata.task_trace ?? [],
+          metadata: resultMetadata,
         });
 
         onMessagesChange(approvalSnapshot.chatId, (currentMessages) => [...currentMessages, savedAssistantMessage]);
@@ -966,7 +1014,7 @@ export function ChatWorkspace({
                   <MarkdownContent content={message.content} />
                 </div>
 
-                <StepsPreview steps={message.steps} />
+                <StepsPreview steps={message.steps} task_trace={message.task_trace} />
 
                 {message.role === "user" ? (
                   <div className="chat-message-actions chat-message-actions--user">

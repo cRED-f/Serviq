@@ -68,6 +68,7 @@ async def ensure_ui_conversation_store() -> None:
                 created_at TEXT NOT NULL,
                 sort_index INTEGER NOT NULL,
                 steps_json TEXT,
+                task_trace_json TEXT,
                 metadata_json TEXT,
                 is_deleted INTEGER NOT NULL DEFAULT 0,
                 FOREIGN KEY(session_id) REFERENCES ui_chat_sessions(id)
@@ -86,6 +87,13 @@ async def ensure_ui_conversation_store() -> None:
             ON ui_chat_messages(session_id, is_deleted, sort_index ASC)
             """
         )
+        # Migration: add task_trace_json column if it doesn't exist
+        try:
+            await db.execute(
+                "ALTER TABLE ui_chat_messages ADD COLUMN task_trace_json TEXT"
+            )
+        except Exception:
+            pass  # Column already exists
         await db.commit()
     finally:
         await db.close()
@@ -252,6 +260,7 @@ async def append_message(
     content: str,
     message_id: str | None = None,
     steps_json: str | None = None,
+    task_trace_json: str | None = None,
     metadata_json: str | None = None,
 ) -> dict[str, Any]:
     await ensure_ui_conversation_store()
@@ -286,12 +295,13 @@ async def append_message(
             """
             INSERT INTO ui_chat_messages(
                 id, session_id, role, content, created_at, sort_index,
-                steps_json, metadata_json, is_deleted
+                steps_json, task_trace_json, metadata_json, is_deleted
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
             ON CONFLICT(id) DO UPDATE SET
                 content = excluded.content,
                 steps_json = excluded.steps_json,
+                task_trace_json = excluded.task_trace_json,
                 metadata_json = excluded.metadata_json,
                 is_deleted = 0
             """,
@@ -303,6 +313,7 @@ async def append_message(
                 now,
                 sort_index,
                 steps_json,
+                task_trace_json,
                 metadata_json,
             ),
         )
@@ -310,7 +321,7 @@ async def append_message(
 
         cursor = await db.execute(
             """
-            SELECT id, session_id, role, content, created_at, sort_index, steps_json, metadata_json
+            SELECT id, session_id, role, content, created_at, sort_index, steps_json, task_trace_json, metadata_json
             FROM ui_chat_messages
             WHERE id = ?
             """,

@@ -25,6 +25,7 @@ class AgentRunResponse(BaseModel):
     response: str
     steps: list[str]
     metadata: dict[str, Any] = Field(default_factory=dict)
+    task_trace: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class AgentHealthResponse(BaseModel):

@@ -37,6 +37,7 @@ class MessageCreateRequest(BaseModel):
     role: str = Field(pattern="^(user|assistant)$")
     content: str
     steps: list[str] | None = None
+    task_trace: list[dict[str, Any]] | None = None
     metadata: dict[str, Any] | None = None
 
 
@@ -59,6 +60,7 @@ def _message_response(row: dict[str, Any]) -> dict[str, Any]:
         "created_at": row["created_at"],
         "sort_index": row["sort_index"],
         "steps": _decode_json_field(row.get("steps_json"), []),
+        "task_trace": _decode_json_field(row.get("task_trace_json"), []),
         "metadata": _decode_json_field(row.get("metadata_json"), {}),
     }
 
@@ -104,6 +106,7 @@ async def create_message(session_id: str, request: MessageCreateRequest) -> dict
             content=request.content,
             message_id=request.id,
             steps_json=json.dumps(request.steps or []),
+            task_trace_json=json.dumps(request.task_trace or []),
             metadata_json=json.dumps(request.metadata or {}),
         )
     except ValueError as error:

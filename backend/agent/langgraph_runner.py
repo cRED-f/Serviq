@@ -681,3 +681,93 @@ async def run_langgraph_agent(
         "steps": result.get("steps", []),
         "metadata": result.get("metadata", {}),
     }
+
+
+async def run_langgraph_agent_with_progress(
+    *,
+    lmstudio_client: LMStudioClient,
+    session_id: str,
+    model: str,
+    user_message: str,
+    history: list[dict[str, str]] | None = None,
+    event_emitter=None,
+) -> dict[str, Any]:
+    """Run agent with progress events emitted to the provided emitter."""
+    from core.logging import get_logger
+
+    logger = get_logger(__name__)
+
+    async def emit(event_type: str, data: dict[str, Any]) -> None:
+        if event_emitter and hasattr(event_emitter, "emit"):
+            await event_emitter.emit(event_type, data)
+
+    try:
+        memory_service = MemoryService(lmstudio_client=lmstudio_client)
+
+        # Stage 1: Prepare context
+        await emit("status", {"stage": "preparing", "message": "Preparing conversation context..."})
+
+        # Stage 2: Classify request
+        await emit("status", {"stage": "classifying", "message": "Analyzing your request..."})
+
+        # Stage 3: Retrieve memory
+        await emit("status", {"stage": "memory_retrieval", "message": "Checking memory for relevant context..."})
+        memory_result = await memory_service.search_memory(query=user_message, limit=5)
+        memory_items = memory_result.get("results", [])
+
+        # Format memory context manually
+        memory_context_lines = []
+        for item in memory_items:
+            title = item.get("title", "")
+            content = item.get("content", "")
+            if title:
+                memory_context_lines.append(f"## {title}\n{content[:200]}")
+            else:
+                memory_context_lines.append(content[:200])
+        memory_context = "\n\n".join(memory_context_lines) if memory_context_lines else ""
+
+        await emit("memory_found", {"count": len(memory_items), "has_context": bool(memory_context)})
+
+        # Stage 4: Recall conversation
+        await emit("status", {"stage": "conversation_recall", "message": "Recalling recent conversation..."})
+
+        # Stage 5: Run task loop
+        await emit("status", {"stage": "task_loop", "message": "Processing your request with tools..."})
+
+        from agent.task_loop import run_agent_task_loop
+
+        result = await run_agent_task_loop(
+            lmstudio_client=lmstudio_client,
+            memory_service=memory_service,
+            model=model,
+            session_id=session_id,
+            user_message=user_message,
+            base_messages=history or [],
+            memory_items=memory_items,
+            memory_context=memory_context,
+        )
+
+        # Emit tool steps as we go
+        for step in result.steps:
+            if "tool" in step.lower() or "execute" in step.lower():
+                tool_name = step.replace("execute_", "").replace("_", " ").title()
+                await emit("tool_executing", {"tool": tool_name, "step": step})
+            else:
+                await emit("status", {"stage": "planning", "message": f"Step: {step}"})
+
+        # Stage 6: Generate final response
+        await emit("status", {"stage": "finalizing", "message": "Generating final response..."})
+
+        # Include task_trace for detailed tracing
+        return {
+            "session_id": session_id,
+            "model": model,
+            "route": result.metadata.get("route", "task_loop"),
+            "response": result.response,
+            "steps": result.steps,
+            "metadata": result.metadata,
+            "task_trace": result.task_trace,
+        }
+    except Exception as exc:
+        logger.exception("run_langgraph_agent_with_progress_error", error=str(exc))
+        raise

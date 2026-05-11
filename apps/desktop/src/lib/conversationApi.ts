@@ -1,6 +1,7 @@
 import { SERVIQ_API_BASE_URL } from "./config";
 import type { UIChatMessage } from "../components/shell/ChatWorkspace";
 import type { ChatHistoryItem } from "../components/shell/LeftSidebar";
+import type { AgentTaskTrace } from "./agentApi";
 
 type SessionRecord = {
   id: string;
@@ -17,6 +18,7 @@ type MessageRecord = {
   content: string;
   created_at: string;
   steps?: string[];
+  task_trace?: AgentTaskTrace[];
   metadata?: Record<string, unknown>;
 };
 
@@ -77,6 +79,7 @@ function messageToUIMessage(message: MessageRecord): UIChatMessage {
     createdAt: formatMessageTime(message.created_at),
     status: "done",
     steps: message.steps ?? [],
+    task_trace: message.task_trace ?? [],
     metadata: message.metadata ?? {},
   };
 }
@@ -191,12 +194,14 @@ export async function saveConversationMessage({
   content,
   steps,
   metadata,
+  task_trace,
 }: {
   sessionId: string;
   role: "user" | "assistant";
   content: string;
   steps?: string[];
   metadata?: Record<string, unknown>;
+  task_trace?: AgentTaskTrace[];
 }): Promise<UIChatMessage> {
   const response = await fetch(
     `${SERVIQ_API_BASE_URL}/api/conversations/sessions/${encodeURIComponent(sessionId)}/messages`,
@@ -211,6 +216,7 @@ export async function saveConversationMessage({
         content,
         steps: steps ?? [],
         metadata: metadata ?? {},
+        task_trace: task_trace ?? [],
       }),
     },
   );
