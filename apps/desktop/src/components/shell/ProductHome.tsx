@@ -4,19 +4,28 @@ import {
   getLMStudioStatus,
   type ServiceHealth,
 } from "../../lib/statusApi";
+import { Server, Cpu } from "lucide-react";
 
 const PRODUCT_CAPABILITIES = ["Local agent", "LM Studio models", "safe tools"];
+
+function StatusIndicator({ connected }: { connected: boolean }) {
+  return (
+    <span
+      className={`status-dot ${connected ? "status-dot--connected" : "status-dot--checking"}`}
+    />
+  );
+}
 
 function ServiceStatusCard({
   title,
   service,
   hint,
-  accent,
+  icon: Icon,
 }: {
   title: string;
   service: ServiceHealth | null;
   hint: string;
-  accent: "pearl" | "mist";
+  icon: typeof Server;
 }) {
   const statusText = service?.status ?? "checking";
   const connected = statusText === "ok" || statusText === "connected";
@@ -29,39 +38,35 @@ function ServiceStatusCard({
       : "status-state-pill--error";
 
   return (
-    <article className={`status-panel status-panel--${accent}`}>
-      <div className="status-panel__row">
-        <div>
-          <span className="status-panel__label">{title}</span>
-          <h3>
-            {connected
-              ? "Connected"
-              : degraded
-                ? "Checking"
-                : "Attention needed"}
-          </h3>
+    <article className="astro-status-card">
+      <div className="astro-status-card__header">
+        <div className="astro-status-card__title-group">
+          <div className="astro-status-card__icon">
+            <Icon className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="astro-status-card__label">{title}</span>
+            <h3 className="astro-status-card__status">
+              {connected
+                ? "Connected"
+                : degraded
+                  ? "Checking"
+                  : "Attention needed"}
+            </h3>
+          </div>
         </div>
 
-        <div className="status-signal">
+        <div className="astro-status-card__signal">
           <span className={`status-state-pill ${badgeClass}`}>
             {connected ? "Live" : degraded ? "Checking" : "Issue"}
           </span>
-          <span
-            className={`status-dot ${
-              connected
-                ? "status-dot--connected"
-                : degraded
-                  ? "status-dot--checking"
-                  : "status-dot--error"
-            }`}
-            aria-label={statusText}
-          />
+          <StatusIndicator connected={connected} />
         </div>
       </div>
 
-      <p className="status-panel__hint">{hint}</p>
+      <p className="astro-status-card__hint">{hint}</p>
 
-      <dl className="status-meta">
+      <dl className="astro-status-card__meta">
         <div>
           <dt>State</dt>
           <dd>{statusText}</dd>
@@ -82,7 +87,6 @@ function ServiceStatusCard({
 export function ProductHome() {
   const [backend, setBackend] = useState<ServiceHealth | null>(null);
   const [lmstudio, setLmstudio] = useState<ServiceHealth | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string>("--");
 
   useEffect(() => {
     let mounted = true;
@@ -99,12 +103,6 @@ export function ProductHome() {
 
       setBackend(backendResult);
       setLmstudio(lmstudioResult);
-      setLastUpdated(
-        new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      );
     }
 
     void load();
@@ -118,12 +116,8 @@ export function ProductHome() {
     };
   }, []);
 
-  const headline = useMemo(() => {
-    if (backend?.status === "ok" && lmstudio?.status === "connected") {
-      return "Your local AI workspace is ready.";
-    }
-
-    return "A black liquid-glass shell for your private local agent.";
+  const isReady = useMemo(() => {
+    return backend?.status === "ok" && lmstudio?.status === "connected";
   }, [backend?.status, lmstudio?.status]);
 
   return (
@@ -131,7 +125,9 @@ export function ProductHome() {
       <article className="hero-panel">
         <div className="hero-panel__copy">
           <div className="hero-panel__eyebrow">Serviq</div>
-          <h1>{headline}</h1>
+          <h1>{isReady
+            ? "Your local AI workspace is ready."
+            : "A black liquid-glass shell for your private local agent."}</h1>
           <p>
             Serviq is a local-first AI desktop assistant designed to run
             privately on your device, helping you get things done without
@@ -165,13 +161,13 @@ export function ProductHome() {
           title="Backend"
           service={backend}
           hint="FastAPI service health and local API readiness"
-          accent="pearl"
+          icon={Server}
         />
         <ServiceStatusCard
           title="LM Studio"
           service={lmstudio}
           hint="Local model runtime connection and model availability"
-          accent="mist"
+          icon={Cpu}
         />
       </section>
     </section>

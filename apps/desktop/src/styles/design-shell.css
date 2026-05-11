@@ -3,7 +3,7 @@
 :root {
   color-scheme: dark;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #020202;
+  background: #27272a;
   color: #f7f7f7;
 }
 
@@ -20,7 +20,7 @@ body,
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background: #020202;
+  background: #27272a;
   color: #f7f7f7;
 }
 
@@ -42,7 +42,7 @@ button {
   background:
     radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.045), transparent 24%),
     radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.032), transparent 22%),
-    linear-gradient(135deg, #010101 0%, #050505 42%, #090909 100%);
+    linear-gradient(135deg, #1f1f23 0%, #27272a 42%, #2d2d30 100%);
 }
 
 .design-shell__background {
@@ -856,4 +856,198 @@ button {
   .status-meta {
     grid-template-columns: 1fr;
   }
+}
+
+/* Astro-style Design */
+.astro-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  padding: 20px 22px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.astro-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.08), transparent 24%);
+}
+
+.astro-card--sm {
+  padding: 14px 16px;
+  width: 160px;
+}
+
+.astro-hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 28px 32px;
+}
+
+@media (max-width: 1024px) {
+  .astro-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+.astro-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.astro-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.astro-label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.astro-float {
+  position: absolute;
+  border-radius: 45% 55% 50% 50% / 45% 45% 55% 55%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(8px);
+}
+
+.astro-status-card {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.045)), rgba(255, 255, 255, 0.032);
+  padding: 20px 22px;
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(14px);
+  min-height: 0;
+}
+
+.astro-status-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.12), transparent 26%), radial-gradient(circle at 90% 12%, rgba(255, 255, 255, 0.06), transparent 22%);
+}
+
+.astro-status-card__header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.astro-status-card__title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.astro-status-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.045));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.astro-status-card__label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.astro-status-card__status {
+  margin: 7px 0 0;
+  font-size: 1.42rem;
+  letter-spacing: -0.04em;
+  color: #ffffff;
+}
+
+.astro-status-card__signal {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+}
+
+.astro-status-card__hint {
+  position: relative;
+  z-index: 1;
+  margin: 11px 0 14px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.astro-status-card__meta {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: auto;
+}
+
+.astro-status-card__meta dt {
+  margin-bottom: 6px;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.astro-status-card__meta dd {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  line-height: 1.4;
+  word-break: break-word;
 }

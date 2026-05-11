@@ -13,6 +13,11 @@ secrets/
 private/
 .local/
 
+# Claude Code
+.agents/
+skills-lock.json
+.claude/
+
 # Runtime workspace and generated data
 workspace/
 backend/workspace/
