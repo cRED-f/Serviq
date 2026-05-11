@@ -3,10 +3,10 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.2.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" alt="Platform">
+  <img src="https://img.shields.io/badge/Platform-Windows-lightgrey" alt="Platform">
 </p>
 
-**Serviq** is a local-first AI assistant that runs large language models on your own machine through [LM Studio](https://lmstudio.ai/). It combines a FastAPI backend with a cross-platform Tauri desktop app, prioritizing privacy, control, and full data ownership.
+**Serviq** is a local AI assistant designed to serve your needs. It uses large language models on your own machine through LM Studio, prioritizing privacy, control, and full data ownership.
 
 > All your data, models, and conversation history stay on your hardware. No cloud dependencies, no external API calls, no data leaving your machine.
 
@@ -33,7 +33,6 @@
 | Data sent to cloud servers | Everything runs locally |
 | Subscription/API costs | Free (bring your own model) |
 | Limited customization | Fully extensible architecture |
-| Internet dependency required | Works offline |
 | Privacy concerns | Complete data ownership |
 
 ## Features
