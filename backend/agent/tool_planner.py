@@ -331,6 +331,25 @@ def _wants_memory_recall(user_message: str) -> bool:
     return any(phrase in lower for phrase in phrases)
 
 
+def _wants_web_search(user_message: str) -> bool:
+    """Check if user is asking for real-time info that needs web search."""
+    lower = user_message.lower()
+    patterns = [
+        "weather",
+        "temperature",
+        "current time",
+        "current news",
+        "latest news",
+        "stock price",
+        "currency",
+        "exchange rate",
+        "today's",
+        "now",
+        "currently",
+    ]
+    return any(pattern in lower for pattern in patterns)
+
+
 def fallback_plan_from_deterministic_router(
     user_message: str,
     *,
@@ -383,6 +402,21 @@ def fallback_plan_from_deterministic_router(
                 reason="User is asking about remembered preferences or previous information.",
                 confidence=0.86,
                 planner="semantic_memory_recall_fallback",
+            )
+
+    if available_tool_names and "web_search" in available_tool_names and _wants_web_search(user_message):
+        already_searched = any(
+            observation.get("tool_name") == "web_search"
+            for observation in (tool_observations or [])
+        )
+        if not already_searched:
+            return AgentToolPlan(
+                action="tool_call",
+                tool_name="web_search",
+                args={"query": user_message, "max_results": 5},
+                reason="User is asking about real-time information (weather, news, etc.).",
+                confidence=0.9,
+                planner="web_search_fallback",
             )
 
     fallback = plan_tool_from_message(user_message)
@@ -455,6 +489,7 @@ Rules:
 - For appending text to a file, choose append_workspace_file. Use 'dir:0/file.txt' or absolute paths.
 - For saving a memory/note, choose save_note.
 - For searching memory, choose search_memory.
+- For weather, current time, current news, stock prices, or any real-time information, choose web_search first.
 - Do not invent tool names.
 - Approval is handled by Serviq after your plan.
 

@@ -5,6 +5,49 @@ from typing import Any
 import httpx
 
 
+def _normalize_message_content(message: dict[str, Any]) -> dict[str, Any]:
+    """Normalize message content to OpenAI format (string or simple text blocks).
+
+    Converts Anthropic-style content arrays (with tool_reference, etc.) to plain strings.
+    LM Studio only supports: text, image_url, video_url content blocks.
+    """
+    content = message.get("content")
+    if content is None:
+        return message
+
+    if isinstance(content, str):
+        return message
+
+    if isinstance(content, list):
+        text_parts = []
+        for block in content:
+            if isinstance(block, dict):
+                block_type = block.get("type")
+                if block_type == "text":
+                    text_parts.append(block.get("text", ""))
+                elif block_type == "tool_reference":
+                    # Skip tool references - convert to placeholder
+                    tool_name = block.get("name", "unknown")
+                    text_parts.append(f"[Tool reference: {tool_name}]")
+                elif block_type == "tool_use":
+                    tool_name = block.get("name", "unknown")
+                    text_parts.append(f"[Tool use: {tool_name}]")
+                else:
+                    # Skip unsupported types
+                    text_parts.append(f"[{block_type}]")
+            elif isinstance(block, str):
+                text_parts.append(block)
+
+        return {**message, "content": "".join(text_parts)}
+
+    return message
+
+
+def _normalize_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Normalize all messages to OpenAI-compatible format."""
+    return [_normalize_message_content(msg) for msg in messages]
+
+
 class LMStudioConnectionError(RuntimeError):
     """Raised when Serviq cannot connect to LM Studio."""
 
@@ -100,9 +143,10 @@ class LMStudioClient:
         temperature: float = 0.2,
         max_tokens: int | None = None,
     ) -> dict[str, Any]:
+        normalized_messages = _normalize_messages(messages)
         body: dict[str, Any] = {
             "model": model,
-            "messages": messages,
+            "messages": normalized_messages,
             "temperature": temperature,
         }
 

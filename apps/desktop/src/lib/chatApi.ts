@@ -78,11 +78,14 @@ function normalizeModels(payload: unknown): ChatModel[] {
 async function readErrorDetail(response: Response) {
   try {
     const errorPayload = await response.json();
-    return (
-      String((errorPayload as Record<string, unknown>)?.error ?? "") ||
-      String((errorPayload as Record<string, unknown>)?.detail ?? "") ||
-      `HTTP ${response.status}`
-    );
+    const error = (errorPayload as Record<string, unknown>)?.error;
+    const detail = (errorPayload as Record<string, unknown>)?.detail;
+
+    // Handle objects that String() would convert to "[object Object]"
+    const errorStr = typeof error === "object" ? JSON.stringify(error) : String(error ?? "");
+    const detailStr = typeof detail === "object" ? JSON.stringify(detail) : String(detail ?? "");
+
+    return errorStr || detailStr || `HTTP ${response.status}`;
   } catch {
     const text = await response.text();
     return text || `HTTP ${response.status}`;
