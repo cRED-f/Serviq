@@ -43,6 +43,18 @@
   height: 12px;
 }
 
+.agent-step-tree__detail {
+  grid-column: 3;
+  margin-top: 4px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
 .approval-card {
   display: grid;
   width: fit-content;

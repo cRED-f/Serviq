@@ -46,7 +46,8 @@ type MarkdownBlock =
   | { type: "paragraph"; content: string }
   | { type: "ul"; items: string[] }
   | { type: "ol"; items: string[] }
-  | { type: "code"; language: string; content: string };
+  | { type: "code"; language: string; content: string }
+  | { type: "table"; headers: string[]; rows: string[][] };
 
 const LOADING_TEXTS = [
   "Serviq is reading your message",
@@ -250,6 +251,10 @@ function parseMarkdownBlocks(markdown: string): MarkdownBlock[] {
   let inCode = false;
   let codeLanguage = "";
   let codeLines: string[] = [];
+  // Table state
+  let inTable = false;
+  let tableHeaders: string[] = [];
+  let tableRows: string[][] = [];
 
   function flushParagraph() {
     if (paragraph.length > 0) {
@@ -270,6 +275,23 @@ function parseMarkdownBlocks(markdown: string): MarkdownBlock[] {
       listType = null;
       listItems = [];
     }
+  }
+
+  function flushTable() {
+    if (inTable && tableHeaders.length > 0) {
+      blocks.push({
+        type: "table",
+        headers: tableHeaders,
+        rows: tableRows,
+      });
+    }
+    inTable = false;
+    tableHeaders = [];
+    tableRows = [];
+  }
+
+  function parseTableCell(cell: string): string {
+    return cell.trim().replace(/^\||\|$/g, "").trim();
   }
 
   for (const line of lines) {
@@ -331,12 +353,42 @@ function parseMarkdownBlocks(markdown: string): MarkdownBlock[] {
     const ordered = /^\d+\.\s+(.+)$/.exec(trimmed);
     if (ordered) {
       flushParagraph();
+      flushTable();
       if (listType && listType !== "ol") {
         flushList();
       }
       listType = "ol";
       listItems.push(ordered[1].trim());
       continue;
+    }
+
+    // Table detection: line starts with | or ends with |
+    if (trimmed.startsWith("|") || trimmed.endsWith("|")) {
+      // Check if it's a table separator row (contains only |, -, :, and spaces)
+      if (/^[\|\-:\s]+$/.test(trimmed.replace(/\|/g, "-"))) {
+        // This is the separator row, skip it
+        continue;
+      }
+
+      // Parse table row
+      const cells = trimmed.split("|").filter((c) => c.trim() !== "");
+
+      if (!inTable) {
+        // First row could be header
+        flushParagraph();
+        flushList();
+        tableHeaders = cells.map(parseTableCell);
+        inTable = true;
+      } else {
+        // Data row
+        tableRows.push(cells.map(parseTableCell));
+      }
+      continue;
+    }
+
+    // End table when we hit a non-table line
+    if (inTable && !trimmed.startsWith("|")) {
+      flushTable();
     }
 
     flushList();
@@ -353,13 +405,16 @@ function parseMarkdownBlocks(markdown: string): MarkdownBlock[] {
 
   flushParagraph();
   flushList();
+  flushTable();
 
   return blocks;
 }
 
 function renderInlineMarkdown(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const pattern = /(`[^`]+`|\*\*[^*]+\*\*)/g;
+  // Pattern matches: `code`, **bold**, [text](url) links, and raw URLs
+  // Raw URL pattern: matches http:// or https:// URLs
+  const pattern = /(`[^`]+`|\*\*[^*]+\*\*|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s<>\)\]]+))/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null = pattern.exec(text);
   let index = 0;
@@ -375,6 +430,36 @@ function renderInlineMarkdown(text: string): ReactNode[] {
       nodes.push(<code key={`inline-${index}`}>{token.slice(1, -1)}</code>);
     } else if (token.startsWith("**")) {
       nodes.push(<strong key={`bold-${index}`}>{token.slice(2, -2)}</strong>);
+    } else if (token.startsWith("[")) {
+      // Handle markdown links: [text](url)
+      const linkText = match[2];
+      const linkUrl = match[3];
+      const isExternal = linkUrl.startsWith("http://") || linkUrl.startsWith("https://");
+      nodes.push(
+        <a
+          key={`link-${index}`}
+          href={linkUrl}
+          target={isExternal ? "_blank" : undefined}
+          rel={isExternal ? "noopener noreferrer" : undefined}
+          className="markdown-link"
+        >
+          {linkText}
+        </a>
+      );
+    } else if (token.startsWith("http://") || token.startsWith("https://")) {
+      // Handle raw URLs - make them clickable
+      const url = token;
+      nodes.push(
+        <a
+          key={`url-${index}`}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="markdown-link"
+        >
+          {url}
+        </a>
+      );
     }
 
     lastIndex = match.index + token.length;
@@ -437,12 +522,39 @@ function MarkdownContent({ content }: { content: string }) {
           );
         }
 
-        return (
-          <pre key={index}>
-            {block.language ? <span className="markdown-content__language">{block.language}</span> : null}
-            <code>{block.content}</code>
-          </pre>
-        );
+        if (block.type === "code") {
+          return (
+            <pre key={index}>
+              {block.language ? <span className="markdown-content__language">{block.language}</span> : null}
+              <code>{block.content}</code>
+            </pre>
+          );
+        }
+
+        if (block.type === "table") {
+          return (
+            <table key={index} className="markdown-table">
+              <thead>
+                <tr>
+                  {block.headers.map((header, hi) => (
+                    <th key={hi}>{renderInlineMarkdown(header)}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {block.rows.map((row, ri) => (
+                  <tr key={ri}>
+                    {row.map((cell, ci) => (
+                      <td key={ci}>{renderInlineMarkdown(cell)}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          );
+        }
+
+        return null;
       })}
     </div>
   );

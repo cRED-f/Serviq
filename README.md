@@ -1,7 +1,7 @@
 # Serviq
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-beta 0.2.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/Version-beta 0.3.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
   <img src="https://img.shields.io/badge/Platform-Windows-lightgrey" alt="Platform">
 </p>
@@ -41,10 +41,14 @@
 - **Bring Your Own Model** — Works with any GGUF/GGML model supported by LM Studio (Llama, Qwen, Mistral, Phi, etc.)
 - **Cross-Platform Desktop** — Native desktop app built with Tauri + React
 - **FastAPI Backend** — Robust REST API for agent orchestration, memory, and tool management
-- **Conversational Agent** — LangGraph-powered agent with reasoning, tool execution, and context awareness
+- **Autonomous Agent** — Multi-step agent with LLM-based planning, deterministic fallbacks, and up to 20 tool executions per task
+- **Smart Tool Planning** — LLM decides when to use tools vs direct answers, with fallback routers for file operations, memory recall, web search, and browser actions
+- **Web Search** — Real-time weather, news, and information via DuckDuckGo integration
+- **Browser Automation** — Playwright-based browser tools for navigation, form filling, and web interactions
 - **Semantic Memory** — Qdrant vector database for similarity search + SQLite for structured storage
-- **Tool System** — Extensible tool framework for file operations, web search, calculations, and shell commands
-- **Approval Workflow** — Safety-first approach requiring approval for high-risk operations
+- **Memory Preloading** — Autonomous agent preloads relevant memories at task start, refreshes every 4 steps
+- **Tool System** — Extensible tool registry for file operations, web search, calculations, shell commands, and browser automation
+- **Approval Workflow** — Safety-first approach requiring approval for risky operations (file write, shell, browser click/fill)
 
 ## Tech Stack
 
@@ -52,7 +56,8 @@
 |-------|--------------|
 | **Desktop UI** | Tauri 2.x, React 19, Vite, TypeScript, Tailwind CSS |
 | **Backend API** | FastAPI, Pydantic, SQLAlchemy, aiosqlite |
-| **Agent Runtime** | LangGraph, LangChain Core |
+| **Agent Runtime** | Custom orchestrator with LLM-based planning |
+| **Browser Automation** | Playwright (Chromium) |
 | **Storage** | SQLite (structured data), Qdrant (vector memory) |
 | **Local LLM** | LM Studio (OpenAI-compatible API) |
 | **Package Manager** | pnpm (monorepo) |
@@ -64,6 +69,7 @@
 │                        Desktop App                              │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐│
 │  │   React UI  │  │  Zustand    │  │  Tauri (Rust) Backend    ││
+│  │  + Markdown │  │  Stores     │  │                          ││
 │  └──────┬──────┘  └─────────────┘  └────────────┬──────────────┘│
 │         │                                       │               │
 │         └─────────────── HTTP ────────────────┘               │
@@ -74,16 +80,21 @@
 │                        Backend API                              │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐ │
 │  │  FastAPI    │  │   Agent     │  │      Memory Service     │ │
-│  │  Routes    │  │  (LangGraph)│  │  (Qdrant + SQLite)      │ │
+│  │  Routes    │  │ Orchestrator│  │  (Qdrant + SQLite)      │ │
 │  └──────┬──────┘  └──────┬──────┘  └────────────┬────────────┘ │
 │         │                │                      │              │
 │         └────────────────┼──────────────────────┘              │
 │                          │                                     │
 │  ┌──────────────────────┼──────────────────────────────────┐ │
 │  │               Tool Registry & Executor                    │ │
-│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────────────┐ │ │
-│  │  │Web Tools│ │File Ops │ │ Shell   │ │ Memory Tools    │ │ │
-│  │  └─────────┘ └─────────┘ └─────────┘ └─────────────────┘ │ │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐  │ │
+│  │  │Web Search│ │Browser   │ │File Ops  │ │ Shell Cmds │  │ │
+│  │  │ (DDG)    │ │(Playwright)│ │          │ │            │  │ │
+│  │  └──────────┘ └──────────┘ └──────────┘ └────────────┘  │ │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐                  │ │
+│  │  │ Memory   │ │ Calculate │ │ Approval │                  │ │
+│  │  │ Recall   │ │           │ │ Store    │                  │ │
+│  │  └──────────┘ └──────────┘ └──────────┘                  │ │
 │  └───────────────────────────────────────────────────────────┘ │
 │                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐ │
@@ -95,11 +106,29 @@
 
 ### Agent Flow
 
-1. **Request Classification** — Fast-path for casual conversation, full agent for complex tasks
-2. **Memory Retrieval** — Search Qdrant for relevant context + SQLite for conversation history
-3. **Planning** — LLM decides: direct answer or tool execution
-4. **Tool Execution** — File operations, web search, calculations (with optional approval)
-5. **Response Synthesis** — Generate final answer with tool observations
+1. **Message Received** — User message sent via `/api/agent/execute`
+2. **Memory Preload** — Search Qdrant for relevant memories based on user message
+3. **Planning Loop** (up to 20 iterations):
+   - LLM plans next action: direct answer or tool call
+   - Deterministic fallback router for common patterns (file ops, web search, browser)
+   - Duplicate tool call prevention
+4. **Tool Execution** — Execute selected tool with approval gates for risky operations
+5. **State Update** — Collect entities (URLs, options), record observations
+6. **Approval Handling** — Pause for user approval on high-risk tools
+7. **Response Synthesis** — Generate final answer with task trace
+8. **Browser Cleanup** — Close Playwright sessions after task completion
+
+### Autonomous Agent Capabilities
+
+| Capability | Tools | Description |
+|------------|-------|-------------|
+| **Web Search** | `web_search` | DuckDuckGo search for weather, news, real-time info |
+| **Browser Navigation** | `browser_navigate`, `browser_read_page` | Open URLs and read page content |
+| **Browser Interaction** | `browser_click`, `browser_fill_form` | Click elements, fill forms (requires approval) |
+| **File Operations** | `read_workspace_file`, `write_workspace_file`, `rename_workspace_file`, `delete_workspace_file` | Safe file operations with dedicated tools |
+| **Memory Recall** | `search_memory` | Semantic search of conversation history |
+| **Shell Commands** | `run_shell_command` | Terminal execution (requires approval) |
+| **Calculations** | `calculate` | Safe arithmetic operations |
 
 ## Project Structure
 
@@ -147,6 +176,7 @@ serviq/
 | [Python](https://python.org/) | 3.12 | Backend runtime |
 | [Docker](https://docker.com/) | Latest | Qdrant vector database |
 | [LM Studio](https://lmstudio.ai/) | Latest | Local LLM inference |
+| [Playwright](https://playwright.dev/) | Latest | Browser automation (optional) |
 
 ### Installation
 
@@ -168,6 +198,9 @@ cp .env.example .env
 # 5. Start LM Studio
 # - Download a model (recommended: Qwen2.5, Llama3, Mistral)
 # - Start the HTTP server (default: http://localhost:1234)
+
+# 6. Install Playwright (optional, for browser automation)
+cd backend && .venv\Scripts\python -m pip install playwright && .venv\Scripts\python -m playwright install chromium
 ```
 
 ## Configuration
@@ -225,10 +258,46 @@ GENERATED_DIR=workspace/generated
 | `GET` | `/` | Service info |
 | `GET` | `/api/health` | Basic health check |
 | `GET` | `/api/health/deep` | Deep health (includes DB) |
-| `POST` | `/api/agent/run` | Run agent with full context |
+| `POST` | `/api/agent/execute` | **Autonomous agent** - multi-step with web search, browser, memory |
+| `POST` | `/api/agent/run` | Legacy agent endpoint |
+| `POST` | `/api/agent/approvals/{id}/approve` | Approve pending tool execution |
+| `POST` | `/api/agent/approvals/{id}/reject` | Reject pending tool execution |
 | `GET` | `/api/llm/models` | List available LM Studio models |
 | `POST` | `/api/llm/chat` | Chat completion |
 | `POST` | `/api/llm/embeddings` | Generate embeddings |
+
+### Autonomous Agent Request
+
+```json
+POST /api/agent/execute
+{
+  "message": "What's the weather in Dhaka?",
+  "session_id": "abc-123",
+  "max_steps": 10,
+  "history": [
+    {"role": "user", "content": "Previous message"},
+    {"role": "assistant", "content": "Previous response"}
+  ]
+}
+```
+
+### Autonomous Agent Response
+
+```json
+{
+  "session_id": "abc-123",
+  "model": "qwen2.5-3b",
+  "route": "autonomous_agent",
+  "response": "The current weather in Dhaka is...",
+  "status": "completed",
+  "steps": ["plan_1", "web_search", "plan_2", "final_answer"],
+  "task_trace": [
+    {"step": 1, "type": "plan", "plan": {"action": "tool_call", "tool_name": "web_search"}},
+    {"step": 2, "type": "tool_result", "tool_result": {"name": "web_search", "ok": true}}
+  ],
+  "task_state": {"collected_entities": {}, "observations": []}
+}
+```
 
 ### Tool Endpoints
 
