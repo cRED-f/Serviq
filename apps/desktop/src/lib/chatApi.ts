@@ -1,4 +1,5 @@
 import { SERVIQ_API_BASE_URL } from "./config";
+import type { AgentTaskTrace } from "./agentApi";
 
 export type ChatRole = "user" | "assistant" | "system";
 
@@ -12,6 +13,7 @@ export type AgentRunRequest = {
   model: string;
   message: string;
   history: AgentHistoryMessage[];
+  max_steps?: number;
 };
 
 export type AgentRunResponse = {
@@ -21,6 +23,7 @@ export type AgentRunResponse = {
   response?: string;
   steps?: string[];
   metadata?: Record<string, unknown>;
+  task_trace?: AgentTaskTrace[];
 };
 
 export type ApprovalDecision = "approve" | "reject";
@@ -114,14 +117,17 @@ export async function runAgentChat(
     signal?: AbortSignal;
   },
 ): Promise<AgentRunResponse> {
-  const response = await fetch(`${SERVIQ_API_BASE_URL}/api/agent/run`, {
+  const response = await fetch(`${SERVIQ_API_BASE_URL}/api/agent/execute`, {
     method: "POST",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
     },
     signal: options?.signal,
-    body: JSON.stringify(request),
+    body: JSON.stringify({
+      ...request,
+      max_steps: request.max_steps ?? 10,
+    }),
   });
 
   if (!response.ok) {
