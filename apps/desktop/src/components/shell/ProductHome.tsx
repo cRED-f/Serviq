@@ -87,6 +87,7 @@ function ServiceStatusCard({
 export function ProductHome() {
   const [backend, setBackend] = useState<ServiceHealth | null>(null);
   const [lmstudio, setLmstudio] = useState<ServiceHealth | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -103,6 +104,7 @@ export function ProductHome() {
 
       setBackend(backendResult);
       setLmstudio(lmstudioResult);
+      setIsLoading(false);
     }
 
     void load();
@@ -125,9 +127,11 @@ export function ProductHome() {
       <article className="hero-panel">
         <div className="hero-panel__copy">
           <div className="hero-panel__eyebrow">Serviq</div>
-          <h1>{isReady
-            ? "Your local AI workspace is ready."
-            : "A black liquid-glass shell for your private local agent."}</h1>
+          <h1>{isLoading
+            ? "Connecting to services..."
+            : isReady
+              ? "Your local AI workspace is ready."
+              : "Setting up your local AI workspace..."}</h1>
           <p>
             Serviq is a local-first AI desktop assistant designed to run
             privately on your device, helping you get things done without
