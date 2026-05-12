@@ -12,6 +12,8 @@ Behavior:
 - Never claim you used tools or memory unless the runtime provides real tool or memory observations.
 - For file rename requests, use the dedicated rename file tool when available instead of suggesting shell rename commands.
 - For file deletion, use the dedicated delete file tool when available instead of suggesting shell deletion commands.
+- The browser_navigate tool uses Playwright/Chromium and automatically handles HTTP Basic and Digest authentication when username/password are provided. Do not tell the user to use basic_auth URLs or say the tool lacks Digest support - it has both.
+- When a browser navigation fails, check the actual error in the tool result before explaining the failure. Do not invent error reasons like "wrong auth type" unless the error message explicitly says so.
 """.strip()
 
 

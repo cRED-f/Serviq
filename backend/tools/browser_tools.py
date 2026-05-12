@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import base64
+import hashlib
 import os
+import random
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -8,12 +11,74 @@ from urllib.parse import urlparse
 
 from tools.base import ToolDefinition, ToolExecutionContext, ToolResult, ToolRisk
 
-try:  # Playwright is optional at import time so the backend can still boot.
+try:
     from playwright.async_api import TimeoutError as PlaywrightTimeoutError
     from playwright.async_api import async_playwright
-except Exception:  # pragma: no cover - depends on local installation
-    PlaywrightTimeoutError = TimeoutError  # type: ignore[assignment]
-    async_playwright = None  # type: ignore[assignment]
+except Exception:  # pragma: no cover
+    PlaywrightTimeoutError = TimeoutError
+    async_playwright = None
+
+
+def _make_basic_auth(username: str, password: str) -> str:
+    credentials = f"{username}:{password}".encode()
+    return f"Basic {base64.b64encode(credentials).decode()}"
+
+
+def _make_digest_auth(
+    username: str,
+    password: str,
+    method: str,
+    uri: str,
+    challenge: dict[str, Any],
+) -> str:
+    realm = challenge.get("realm", "")
+    nonce = challenge.get("nonce", "")
+    qop = challenge.get("qop", "auth")
+    opaque = challenge.get("opaque", "")
+    algorithm = challenge.get("algorithm", "MD5")
+
+    if algorithm.lower() == "md5-sess":
+        a1_hash = hashlib.md5(f"{username}:{realm}:{password}".encode()).hexdigest()
+        a1 = hashlib.md5(f"{a1_hash}:{nonce}:00000001:{random.choice('abcdef0123456789')}:{qop}".encode()).hexdigest()
+    else:
+        a1 = hashlib.md5(f"{username}:{realm}:{password}".encode()).hexdigest()
+
+    a2 = hashlib.md5(f"{method}:{uri}".encode()).hexdigest()
+
+    if qop in ("auth", "auth-int"):
+        nc = "00000001"
+        cnonce = hashlib.md5(str(random.randint(0, 2**32)).encode()).hexdigest()[:8]
+        response = hashlib.md5(f"{a1}:{nonce}:{nc}:{cnonce}:{qop}:{a2}".encode()).hexdigest()
+        auth_parts = [f'username="{username}"', f'realm="{realm}"', f'nonce="{nonce}"',
+                      f'uri="{uri}"', f'cnonce="{cnonce}"', f'nc={nc}',
+                      f'qop={qop}', f'uri="{uri}"',
+                      f'response="{response}"']
+    else:
+        response = hashlib.md5(f"{a1}:{nonce}:{a2}".encode()).hexdigest()
+        auth_parts = [f'username="{username}"', f'realm="{realm}"', f'nonce="{nonce}"',
+                      f'uri="{uri}"', f'response="{response}"']
+
+    if opaque:
+        auth_parts.append(f'opaque="{opaque}"')
+
+    return f"Digest {', '.join(auth_parts)}"
+
+
+def _parse_www_authenticate(header: str) -> dict[str, Any]:
+    scheme, _, params = header.partition(" ")
+    scheme = scheme.strip()
+    result: dict[str, Any] = {"scheme": scheme}
+    for part in params.split(","):
+        part = part.strip()
+        if "=" in part:
+            key, _, value = part.partition("=")
+            key = key.strip()
+            value = value.strip().strip('"')
+            try:
+                result[key] = int(value)
+            except (ValueError, TypeError):
+                result[key] = value
+    return result
 
 # Configurable session timeout (default 30 minutes)
 _BROWSER_SESSION_TIMEOUT_SECONDS = int(os.getenv("SERVIQ_BROWSER_SESSION_TIMEOUT", "1800"))
@@ -26,6 +91,8 @@ class BrowserSession:
     context: Any
     page: Any
     created_at: float = field(default_factory=time.time)
+    username: str = ""
+    password: str = ""
 
 
 _BROWSER_SESSIONS: dict[str, BrowserSession] = {}
@@ -51,7 +118,11 @@ def _normalize_url(raw_url: str) -> str:
     return url
 
 
-async def _get_browser_session(session_id: str) -> BrowserSession:
+async def _get_browser_session(
+    session_id: str,
+    username: str = "",
+    password: str = "",
+) -> BrowserSession:
     if async_playwright is None:
         raise RuntimeError(
             "Playwright is not installed. Install it with `pip install playwright` and run `playwright install chromium`."
@@ -59,7 +130,11 @@ async def _get_browser_session(session_id: str) -> BrowserSession:
 
     existing = _BROWSER_SESSIONS.get(session_id)
     if existing:
-        return existing
+        needs_auth = bool(username)
+        has_auth = bool(existing.username)
+        if needs_auth == has_auth or (not needs_auth and not has_auth):
+            return existing
+        await _close_browser_session(session_id)
 
     playwright = await async_playwright().start()
     browser = await playwright.chromium.launch(headless=_browser_headless())
@@ -71,9 +146,73 @@ async def _get_browser_session(session_id: str) -> BrowserSession:
         ),
     )
     page = await context.new_page()
-    session = BrowserSession(playwright=playwright, browser=browser, context=context, page=page)
+
+    if username:
+        await context.clear_cookies()
+        route_interceptor = _create_auth_interceptor(username, password)
+        await context.route("**", route_interceptor)
+
+    session = BrowserSession(
+        playwright=playwright,
+        browser=browser,
+        context=context,
+        page=page,
+        username=username,
+        password=password,
+    )
     _BROWSER_SESSIONS[session_id] = session
     return session
+
+
+async def _auth_route_handler(route: Any, username: str, password: str) -> None:
+    try:
+        req = route.request
+        headers = dict(req.headers)
+        url = str(req.url)
+        parsed_url = urlparse(url)
+        uri = parsed_url.path or "/"
+
+        if parsed_url.query:
+            uri = f"{uri}?{parsed_url.query}"
+
+        www_auth = headers.get("www-authenticate", "")
+
+        if www_auth.lower().startswith("basic"):
+            headers["Authorization"] = _make_basic_auth(username, password)
+            try:
+                response = await route.fetch(headers=headers, timeout=10000)
+                if response.ok:
+                    await route.fulfill(response=response)
+                    return
+            except Exception:
+                pass
+            headers.pop("Authorization", None)
+            www_auth = ""
+
+        if www_auth.lower().startswith("digest"):
+            challenge = _parse_www_authenticate(www_auth)
+            headers["Authorization"] = _make_digest_auth(
+                username, password, req.method, uri, challenge
+            )
+            try:
+                response = await route.fetch(headers=headers, timeout=10000)
+                await route.fulfill(response=response)
+                return
+            except Exception:
+                pass
+
+        await route.continue_()
+    except Exception:
+        try:
+            await route.continue_()
+        except Exception:
+            pass
+
+
+def _create_auth_interceptor(username: str, password: str):
+    async def interceptor(route: Any) -> None:
+        await _auth_route_handler(route, username, password)
+    return interceptor
 
 
 async def _close_browser_session(session_id: str) -> bool:
@@ -150,8 +289,10 @@ async def browser_navigate_tool(args: dict[str, Any], context: ToolExecutionCont
         url = _normalize_url(str(args.get("url", "")))
         wait_until = str(args.get("wait_until", "domcontentloaded"))
         timeout_ms = int(args.get("timeout_ms", 30000))
+        username = str(args.get("username", ""))
+        password = str(args.get("password", ""))
 
-        session = await _get_browser_session(context.session_id)
+        session = await _get_browser_session(context.session_id, username, password)
         await session.page.goto(url, wait_until=wait_until, timeout=timeout_ms)
 
         return ToolResult(
@@ -161,6 +302,7 @@ async def browser_navigate_tool(args: dict[str, Any], context: ToolExecutionCont
             output={
                 "url": await _page_url(session.page),
                 "title": await _page_title(session.page),
+                "authenticated": bool(username),
             },
         )
     except PlaywrightTimeoutError as exc:
@@ -407,13 +549,16 @@ BROWSER_TOOL_DEFINITIONS = [
     ToolDefinition(
         name="browser_navigate",
         description=(
-            "Open or navigate a real Chromium browser page with Playwright. Use when Serviq needs to visit a known URL."
+            "Open or navigate a real Chromium browser page with Playwright. Use when Serviq needs to visit a known URL. "
+            "Supports HTTP Basic and Digest authentication via username/password parameters."
         ),
         risk=ToolRisk.LOW,
         parameters={
             "type": "object",
             "properties": {
                 "url": {"type": "string", "description": "URL or domain to open."},
+                "username": {"type": "string", "description": "HTTP auth username (optional)."},
+                "password": {"type": "string", "description": "HTTP auth password (optional)."},
                 "wait_until": {"type": "string", "default": "domcontentloaded"},
                 "timeout_ms": {"type": "integer", "default": 30000},
             },

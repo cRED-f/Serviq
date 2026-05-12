@@ -350,6 +350,78 @@ def _wants_web_search(user_message: str) -> bool:
     return any(pattern in lower for pattern in patterns)
 
 
+def _extract_first_url(user_message: str) -> str | None:
+    match = re.search(r"https?://[^\s)\]}>\"']+", user_message)
+    if match:
+        return match.group(0).rstrip(".,")
+
+    domain_match = re.search(
+        r"\b(?:open|go to|visit|navigate to|browse)\s+([a-z0-9.-]+\.[a-z]{2,}(?:/[^\s]*)?)",
+        user_message,
+        flags=re.IGNORECASE,
+    )
+    if domain_match:
+        return domain_match.group(1).rstrip(".,")
+
+    return None
+
+
+def _extract_auth_credentials(user_message: str) -> tuple[str, str]:
+    username = ""
+    password = ""
+
+    single_quote_creds = re.search(r"username\s+[']([^']+)[']\s+and\s+password\s+[']([^']+)[']", user_message, re.IGNORECASE)
+    if single_quote_creds:
+        username, password = single_quote_creds.group(1), single_quote_creds.group(2)
+        return username, password
+
+    double_quote_creds = re.search(r'username\s+["]([^"]+)["]\s+and\s+password\s+["]([^"]+)["]', user_message, re.IGNORECASE)
+    if double_quote_creds:
+        username, password = double_quote_creds.group(1), double_quote_creds.group(2)
+        return username, password
+
+    user_match = re.search(r"username\s+['\"]?(\w+)['\"]?", user_message, re.IGNORECASE)
+    if user_match:
+        username = user_match.group(1)
+
+    pass_match = re.search(r"password\s+['\"]?(\w+)['\"]?", user_message, re.IGNORECASE)
+    if pass_match:
+        password = pass_match.group(1)
+
+    if not username:
+        uname_match = re.search(r"\b(?:user(?:name)?|login|un)\s*[:=]\s*['\"]?(\w+)['\"]?", user_message, re.IGNORECASE)
+        if uname_match:
+            username = uname_match.group(1)
+
+    if not password:
+        pwd_match = re.search(r"\b(?:pass(?:word)?|pwd)\s*[:=]\s*['\"]?(\w+)['\"]?", user_message, re.IGNORECASE)
+        if pwd_match:
+            password = pwd_match.group(1)
+
+    return username, password
+
+
+def _wants_browser_navigation(user_message: str) -> bool:
+    lower = user_message.lower()
+    browser_words = [
+        "open website",
+        "open this site",
+        "open browser",
+        "go to",
+        "visit",
+        "navigate to",
+        "browse",
+        "fill the form",
+        "checkout",
+        "booking page",
+        "book flight",
+        "book hotel",
+        "book ticket",
+        "reserve",
+    ]
+    return any(word in lower for word in browser_words)
+
+
 def fallback_plan_from_deterministic_router(
     user_message: str,
     *,
@@ -387,6 +459,49 @@ def fallback_plan_from_deterministic_router(
             reason="Deterministic fallback detected an explicit shell/terminal command.",
             confidence=0.75,
             planner="deterministic_explicit_shell_fallback",
+        )
+
+    first_url = _extract_first_url(user_message)
+    username, password = _extract_auth_credentials(user_message)
+
+    if (
+        available_tool_names
+        and first_url
+        and "browser_navigate" in available_tool_names
+        and _wants_browser_navigation(user_message)
+    ):
+        already_navigated = any(
+            observation.get("tool_name") == "browser_navigate"
+            for observation in (tool_observations or [])
+        )
+        if not already_navigated:
+            args = {"url": first_url}
+            if username and password:
+                args["username"] = username
+                args["password"] = password
+            return AgentToolPlan(
+                action="tool_call",
+                tool_name="browser_navigate",
+                args=args,
+                reason="User asked Serviq to open or navigate a browser URL with authentication.",
+                confidence=0.86,
+                planner="deterministic_browser_navigation_fallback",
+            )
+
+    if (
+        available_tool_names
+        and "browser_read_page" in available_tool_names
+        and _wants_browser_navigation(user_message)
+        and any(observation.get("tool_name") == "browser_navigate" for observation in (tool_observations or []))
+        and not any(observation.get("tool_name") == "browser_read_page" for observation in (tool_observations or []))
+    ):
+        return AgentToolPlan(
+            action="tool_call",
+            tool_name="browser_read_page",
+            args={"max_text_length": 6000},
+            reason="A browser page is open and Serviq should inspect it before deciding the next action.",
+            confidence=0.78,
+            planner="deterministic_browser_read_after_navigation",
         )
 
     if available_tool_names and "search_memory" in available_tool_names and _wants_memory_recall(user_message):
@@ -447,11 +562,16 @@ async def plan_next_action(
     tool_observations: list[dict[str, Any]] | None = None,
     step_index: int = 1,
     max_steps: int = 4,
+    task_context: str | dict[str, Any] | None = None,
 ) -> AgentToolPlan:
     available_tool_names = {tool["name"] for tool in registry.list_tools()}
     tool_catalog = _tool_catalog_text(registry)
     memory_context = _memory_summary(memory_items or [])
     observation_context = _observation_summary(tool_observations or [])
+    if isinstance(task_context, dict):
+        task_context_text = json.dumps(task_context, ensure_ascii=False, indent=2, default=str)
+    else:
+        task_context_text = str(task_context or "No autonomous task state was provided.")
     os_name = platform.system() or "unknown"
 
     system_prompt = f"""
@@ -490,6 +610,10 @@ Rules:
 - For saving a memory/note, choose save_note.
 - For searching memory, choose search_memory.
 - For weather, current time, current news, stock prices, or any real-time information, choose web_search first.
+- For booking, checkout, reservation, product, or account workflows: use web_search to find options, then browser_navigate when a URL is known, then browser_read_page before clicks/fills.
+- Use browser_click only when the next click is clear from current page context. Never click final purchase/payment/submit/confirm booking unless approval is requested by policy.
+- Use browser_fill_form only when the user already provided the needed fields or the field values are present in conversation/task state.
+- Use browser_get_current_url when the user asked for a checkout/final link or after completing form navigation.
 - Do not invent tool names.
 - Approval is handled by Serviq after your plan.
 
@@ -516,6 +640,9 @@ Preloaded memory summary:
 
 Previous tool observations:
 {observation_context}
+
+Current autonomous task state:
+{task_context_text}
 
 Return the JSON plan now.
 """.strip()
@@ -550,6 +677,9 @@ Return the JSON plan now.
             "search_memory",
             "rename_workspace_file",
             "delete_workspace_file",
+            "web_search",
+            "browser_navigate",
+            "browser_read_page",
         }:
             fallback.raw = f"LLM planner returned direct_answer: {content}"
             return fallback
@@ -581,4 +711,44 @@ Return the JSON plan now.
             reason=f"Planner failed and no fallback tool matched: {type(exc).__name__}: {exc}",
             confidence=0.0,
             planner="planner_failure_direct_answer",
+        )
+
+
+
+class EnhancedPlanner:
+    """LLM planner wrapper that always receives full autonomous task context."""
+
+    def __init__(
+        self,
+        *,
+        lmstudio_client: LMStudioClient,
+        model: str,
+        registry: ToolRegistry,
+    ) -> None:
+        self.lmstudio_client = lmstudio_client
+        self.model = model
+        self.registry = registry
+
+    async def plan_next_action(
+        self,
+        *,
+        user_message: str,
+        history: list[dict[str, str]] | None,
+        memory_items: list[dict[str, Any]] | None,
+        tool_observations: list[dict[str, Any]] | None,
+        step_index: int,
+        max_steps: int,
+        task_context: str | dict[str, Any] | None = None,
+    ) -> AgentToolPlan:
+        return await plan_next_action(
+            lmstudio_client=self.lmstudio_client,
+            model=self.model,
+            user_message=user_message,
+            history=history,
+            memory_items=memory_items,
+            registry=self.registry,
+            tool_observations=tool_observations,
+            step_index=step_index,
+            max_steps=max_steps,
+            task_context=task_context,
         )
