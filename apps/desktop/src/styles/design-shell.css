@@ -90,7 +90,7 @@ button {
 
 .home-screen {
   display: grid;
-  grid-template-rows: minmax(0, 1.35fr) minmax(0, 0.95fr) minmax(0, 0.6fr);
+  grid-template-rows: minmax(0, 2.5fr) minmax(0, 1.5fr) minmax(0, 0.3fr) auto;
   gap: 14px;
 }
 
@@ -287,16 +287,16 @@ button {
   min-height: 0;
   overflow-y: auto;
   padding-right: 2px;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .sidebar-history-list::-webkit-scrollbar {
-  width: 6px;
+  display: none;
 }
 
 .sidebar-history-list::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  display: none;
 }
 
 .sidebar-history-row {
@@ -604,6 +604,45 @@ button {
   min-height: 0;
 }
 
+.home-footer {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 12px 24px;
+  z-index: 100;
+}
+
+.home-footer__text {
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 11px;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
+.home-footer__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #38bdf8;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+}
+
+.home-footer__link:hover {
+  opacity: 0.8;
+}
+
+.home-footer__icon {
+  width: 14px;
+  height: 14px;
+}
+
 .status-panel {
   display: flex;
   min-height: 0;
@@ -803,6 +842,10 @@ button {
 
   .hero-panel__visual {
     min-height: 185px;
+  }
+
+  .home-screen {
+    grid-template-rows: auto auto auto auto;
   }
 }
 

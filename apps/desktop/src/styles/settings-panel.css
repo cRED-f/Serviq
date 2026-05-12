@@ -94,16 +94,16 @@
   min-height: 0;
   overflow-y: auto;
   padding-right: 4px;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .settings-list::-webkit-scrollbar {
-  width: 7px;
+  display: none;
 }
 
 .settings-list::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  display: none;
 }
 
 .setting-row {

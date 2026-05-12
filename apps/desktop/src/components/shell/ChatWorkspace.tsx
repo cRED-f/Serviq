@@ -768,6 +768,14 @@ export function ChatWorkspace({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const stoppedByUserRef = useRef(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [input]);
 
   useEffect(() => {
     if (!busy || processComplete) {
@@ -1184,6 +1192,7 @@ export function ChatWorkspace({
 
       <form className="chat-input-form" onSubmit={handleSubmit}>
         <textarea
+          ref={textareaRef}
           value={input}
           rows={1}
           onChange={(event) => setInput(event.target.value)}

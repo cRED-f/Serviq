@@ -98,16 +98,16 @@
   gap: 10px;
   overflow-y: auto;
   padding: 2px 4px 2px 0;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .chat-message-list::-webkit-scrollbar {
-  width: 7px;
+  display: none;
 }
 
 .chat-message-list::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  display: none;
 }
 
 .empty-chat-state {
@@ -452,6 +452,13 @@
   padding: 11px 12px;
   font-size: 14px;
   line-height: 1.45;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chat-input-form textarea::-webkit-scrollbar {
+  display: none;
 }
 
 .chat-input-form textarea::placeholder {
